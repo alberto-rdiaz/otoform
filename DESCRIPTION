@@ -1,0 +1,13 @@
+Package: otoform
+Title: Otolith Contour Shape Analysis via À Trous Wavelet Decomposition
+Version: 0.0.0.9000
+Authors@R: 
+    person("Alberto", "Díaz", , "argdz@proton.me", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0004-6961-4235"))
+Description: Analyzes otolith contours through à trous wavelet decomposition
+    (B3-spline) applied to centroid-distance signatures, as an alternative
+    to Fourier descriptors for morphometric classification.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.0.0
