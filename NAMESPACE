@@ -3,4 +3,6 @@
 export(Conte)
 export(atrous_b3)
 export(coordsSort)
+export(resample_arc)
+export(smoothout)
 export(toBW)

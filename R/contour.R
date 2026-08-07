@@ -84,3 +84,41 @@ resample_arc <- function(xy, N, s0 = 0) {
   attr(out, "perimeter") <- P
   out
 }
+
+#' Resample a contour with the rightmost point anchored at index 1
+#'
+#' Locates the rightmost point of the contour to sub-pixel accuracy by
+#' fitting a parabola to the x coordinate near the discrete maximum, then
+#' resamples the contour so that the first point falls exactly there.
+#'
+#' Assumes the otolith is oriented with the rostrum pointing right.
+#'
+#' @param xy A two-column matrix of contour coordinates.
+#' @param N Number of output points. Defaults to 512.
+#'
+#' @return An N-by-2 matrix with attributes \code{status}, \code{s_star} and
+#'   \code{delta}. Status is "ok" when anchoring succeeded.
+#' @export
+#'
+anchor_rostrum <- function(xy, N = 512L) {
+  g <- resample_arc(xy, N, s0 = 0)
+  P <- attr(g, "perimeter")
+  h <- P / N
+
+  k  <- which.max(g[, 1L])
+  km <- if (k == 1L) N else k - 1L
+  kp <- if (k == N) 1L else k + 1L
+
+  x0 <- g[km, 1L]; x1 <- g[k, 1L]; x2 <- g[kp, 1L]
+  den <- x0 - 2 * x1 + x2
+
+  if (den >= 0) return(structure(g, status = "pico_no_concavo"))
+
+  delta <- (x0 - x2) / (2 * den)
+  if (abs(delta) > 0.5) return(structure(g, status = "delta_fuera_rango"))
+
+  s_star <- ((k - 1L + delta) * h) %% P
+
+  structure(resample_arc(xy, N, s0 = s_star),
+            status = "ok", s_star = s_star, delta = delta)
+}
