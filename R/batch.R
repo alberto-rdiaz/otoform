@@ -46,3 +46,33 @@ process_image <- function(path, threshold = 0.5, k = 128L,
     res,
     list(threshold = threshold, k = k))
 }
+
+#' Process every image in a directory
+#'
+#' Applies \code{process_image} to each JPEG in a folder. Failures are
+#' recorded rather than propagated, so one bad image does not stop the run.
+#'
+#' @param dir Path to the folder containing the images.
+#' @param ... Arguments passed on to \code{process_image}.
+#'
+#' @return A list of results, one per image, named by file.
+#' @export
+#'
+process_directory <- function(dir, ...) {
+  stopifnot(dir.exists(dir))
+
+  files <- list.files(dir, pattern = "\\.jpe?g$",
+                      full.names = TRUE, ignore.case = TRUE)
+
+  if (length(files) == 0L) stop("no JPEG files found in ", dir)
+
+  out <- vector("list", length(files))
+  names(out) <- basename(files)
+
+  for (i in seq_along(files)) {
+    message(sprintf("[%d/%d] %s", i, length(files), basename(files[i])))
+    out[[i]] <- process_image(files[i], ...)
+  }
+
+  out
+}
