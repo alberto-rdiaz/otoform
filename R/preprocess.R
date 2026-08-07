@@ -37,8 +37,8 @@ signed_area <- function(x, y) {
 #' @param I A 2D binary matrix (0s and 1s), typically the output of
 #'   \code{toBW}.
 #'
-#' @return A list with elements X and Y: the pixel coordinates of the
-#'   traced contour, in counter-clockwise order.
+#' @return A two-column matrix of contour coordinates, in counter-clockwise
+#'   order.
 #' @export
 #'
 Conte <- function(I) {
@@ -69,11 +69,10 @@ Conte <- function(I) {
     } else S <- (S+1) %% 8
   }
 
-  out <- list(X = Y[-1], Y = (dim(I)[1] - X)[-1])
+  out <- cbind(x = Y[-1], y = (dim(I)[1] - X)[-1])
 
-  if (signed_area(out$X, out$Y) < 0) {
-    out$X <- rev(out$X)
-    out$Y <- rev(out$Y)
+  if (signed_area(out[, 1L], out[, 2L]) < 0) {
+    out <- out[rev(seq_len(nrow(out))), , drop = FALSE]
   }
 
   out

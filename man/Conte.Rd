@@ -11,8 +11,8 @@ Conte(I)
 \code{toBW}.}
 }
 \value{
-A list with elements X and Y: the pixel coordinates of the
-traced contour, in counter-clockwise order.
+A two-column matrix of contour coordinates, in counter-clockwise
+order.
 }
 \description{
 Follows the outer boundary of a binary shape starting from a point found
