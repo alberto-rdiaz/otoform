@@ -122,3 +122,42 @@ anchor_rostrum <- function(xy, N = 512L) {
   structure(resample_arc(xy, N, s0 = s_star),
             status = "ok", s_star = s_star, delta = delta)
 }
+
+#' Centre and rotate a contour onto its principal axis
+#'
+#' Translates the contour to the origin and rotates it so that its principal
+#' axis aligns with the x axis. The 180-degree ambiguity of the principal
+#' axis is resolved by assuming the rostrum points right in the source image.
+#'
+#' @param M A two-column matrix of contour coordinates.
+#'
+#' @return A two-column matrix, centred and rotated, with the rotation angle
+#'   stored as the attribute \code{theta}.
+#' @export
+#'
+rotation <- function(M) {
+  stopifnot(is.matrix(M), ncol(M) == 2L, nrow(M) >= 3L)
+
+  # Centrar en el origen
+  Mc <- cbind(M[, 1L] - mean(M[, 1L]),
+              M[, 2L] - mean(M[, 2L]))
+
+  # Eje principal: autovector asociado al autovalor mayor
+  v <- eigen(stats::cov(Mc))$vectors[, 1L]
+  theta <- atan2(v[2L], v[1L])
+
+  R <- matrix(c( cos(theta), sin(theta),
+                 -sin(theta), cos(theta)), 2L, 2L, byrow = TRUE)
+
+  Mr <- Mc %*% t(R)
+
+  # Resolver la ambiguedad de 180 grados:
+  # el rostrum debe quedar en x positiva
+  if (abs(min(Mr[, 1L])) > abs(max(Mr[, 1L]))) {
+    Mr <- -Mr
+    theta <- theta + pi
+  }
+
+  attr(Mr, "theta") <- theta
+  Mr
+}
