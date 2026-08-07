@@ -14,6 +14,20 @@ toBW <- function(pics, threshold) {
   return(pics)
 }
 
+#' Compute the signed area of a closed polygon (shoelace formula)
+#'
+#' The sign of the result indicates the traversal direction: positive for
+#' counter-clockwise, negative for clockwise. Used internally to enforce a
+#' consistent contour orientation.
+#'
+#' @param x,y Numeric vectors of vertex coordinates.
+#'
+#' @return A single numeric value. Positive if counter-clockwise.
+#' @keywords internal
+#'
+signed_area <- function(x, y) {
+  sum(x * c(y[-1], y[1]) - c(x[-1], x[1]) * y) / 2
+}
 
 #' Trace the contour of a binary object (Moore boundary tracing)
 #'
@@ -24,8 +38,9 @@ toBW <- function(pics, threshold) {
 #'   \code{toBW}.
 #'
 #' @return A list with elements X and Y: the pixel coordinates of the
-#'   traced contour.
+#'   traced contour, in counter-clockwise order.
 #' @export
+#'
 Conte <- function(I) {
   x <- (c(floor(dim(I)[1]/2), floor(dim(I)[2]/2)))
   x[1] <- dim(I)[1] - x[1]
@@ -54,5 +69,12 @@ Conte <- function(I) {
     } else S <- (S+1) %% 8
   }
 
-  list(X=(Y[-1]), Y=((dim(I)[1]-X))[-1])
+  out <- list(X = Y[-1], Y = (dim(I)[1] - X)[-1])
+
+  if (signed_area(out$X, out$Y) < 0) {
+    out$X <- rev(out$X)
+    out$Y <- rev(out$Y)
+  }
+
+  out
 }
