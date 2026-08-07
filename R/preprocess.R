@@ -1,9 +1,10 @@
 #' Convert an RGB image to black and white by luminance thresholding
 #'
-#' @param pics A 3D array (height x width x 3) with RGB channels in [0, 1],
-#'   as returned by \code{jpeg::readJPEG}.
-#' @param threshold Numeric in [0, 1]. Luminance values at or above the
-#'   threshold become 1 (white); values below become 0 (black).
+#' @param pics A 3D array (height x width x 3) with RGB channels between
+#'   0 and 1, as returned by \code{jpeg::readJPEG}.
+#'
+#' @param threshold Numeric between 0 and 1. Luminance values at or above
+#'   the threshold become 1 (white); values below become 0 (black).
 #'
 #' @return A 2D matrix (height x width) of 0s and 1s.
 #' @export

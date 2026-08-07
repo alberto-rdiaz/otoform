@@ -78,8 +78,8 @@ resample_arc <- function(xy, N, s0 = 0) {
 
   t <- (s0 + seq(0, P, length.out = N + 1L)[-(N + 1L)]) %% P
 
-  out <- cbind(x = approx(s, xyc[, 1L], xout = t)$y,
-               y = approx(s, xyc[, 2L], xout = t)$y)
+  out <- cbind(x = stats::approx(s, xyc[, 1L], xout = t)$y,
+               y = stats::approx(s, xyc[, 2L], xout = t)$y)
 
   attr(out, "perimeter") <- P
   out

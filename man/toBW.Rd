@@ -7,11 +7,11 @@
 toBW(pics, threshold)
 }
 \arguments{
-\item{pics}{A 3D array (height x width x 3) with RGB channels in \link{0, 1},
-as returned by \code{jpeg::readJPEG}.}
+\item{pics}{A 3D array (height x width x 3) with RGB channels between
+0 and 1, as returned by \code{jpeg::readJPEG}.}
 
-\item{threshold}{Numeric in \link{0, 1}. Luminance values at or above the
-threshold become 1 (white); values below become 0 (black).}
+\item{threshold}{Numeric between 0 and 1. Luminance values at or above
+the threshold become 1 (white); values below become 0 (black).}
 }
 \value{
 A 2D matrix (height x width) of 0s and 1s.
