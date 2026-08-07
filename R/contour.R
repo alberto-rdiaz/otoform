@@ -40,3 +40,47 @@ smoothout <- function(M, k) {
   }
   M
 }
+
+#' Resample a closed contour at equal arc-length intervals
+#'
+#' Redistributes the vertices of a closed contour so that consecutive points
+#' are equally spaced along the curve. The starting position can be shifted
+#' with \code{s0}, which allows the sampling grid to be anchored at an
+#' arbitrary point.
+#'
+#' @param xy A two-column matrix of contour coordinates.
+#' @param N Number of output points.
+#' @param s0 Arc-length offset of the first sample. Defaults to zero.
+#'
+#' @return An N-by-2 matrix, with the total perimeter stored as the
+#'   attribute \code{perimeter}.
+#' @export
+#'
+resample_arc <- function(xy, N, s0 = 0) {
+  stopifnot(is.matrix(xy), ncol(xy) == 2L, nrow(xy) >= 3L,
+            is.numeric(N), length(N) == 1L, N >= 3L)
+
+  if (isTRUE(all.equal(xy[1L, ], xy[nrow(xy), ], check.attributes = FALSE))) {
+    xy <- xy[-nrow(xy), , drop = FALSE]
+  }
+
+  xyc <- rbind(xy, xy[1L, ])
+
+  seg <- sqrt(rowSums(diff(xyc)^2))
+  if (any(seg == 0)) {
+    xyc <- xyc[c(TRUE, seg > 0), , drop = FALSE]
+    if (nrow(xyc) < 4L) stop("contorno degenerado tras filtrar segmentos nulos")
+    seg <- sqrt(rowSums(diff(xyc)^2))
+  }
+
+  s <- c(0, cumsum(seg))
+  P <- s[length(s)]
+
+  t <- (s0 + seq(0, P, length.out = N + 1L)[-(N + 1L)]) %% P
+
+  out <- cbind(x = approx(s, xyc[, 1L], xout = t)$y,
+               y = approx(s, xyc[, 2L], xout = t)$y)
+
+  attr(out, "perimeter") <- P
+  out
+}
