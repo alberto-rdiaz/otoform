@@ -1,3 +1,52 @@
+#' Convert an RGB image to luminance
+#'
+#' Applies the Rec.709 luminance coefficients (0.2126, 0.7152, 0.0722). A plain
+#' channel average is not used: it over-weights the blue channel and flattens
+#' the otolith/background contrast.
+#'
+#' @param img A 3D array (height x width x 3) with values in \code{[0, 1]},
+#'   as returned by \code{jpeg::readJPEG}. Exactly three channels are
+#'   required and they are interpreted as R, G and B in that order.
+#'
+#' @return A numeric matrix (height x width) with values in \code{[0, 1]}.
+#'   The result is \strong{continuous}, not quantised.
+#'
+#' @details
+#' The output is deliberately left unquantised. The Rec.709 weights are not
+#' dyadic, so combining three 8-bit channels yields tens of thousands of
+#' distinct luma values, not 256. Choosing a number of histogram levels
+#' \code{L} is a separate methodological decision and belongs to
+#' \code{\link{binarize}}: colour conversion and histogram binning are
+#' justified on different grounds and should not be coupled.
+#'
+#' @seealso \code{\link{binarize}}, \code{\link{otsu}}
+#'
+#' @export
+to_gray <- function(img) {
+
+  if (!is.array(img) || !is.numeric(img) || length(dim(img)) != 3L)
+    stop("to_gray(): 'img' must be a 3D array (height x width x 3). Greyscale ",
+         "JPEGs are read as 2D matrices and carry no colour information.",
+         call. = FALSE)
+
+  if (dim(img)[3L] != 3L)
+    stop(sprintf("to_gray(): 'img' has %d channel(s); RGB requires exactly 3.",
+                 dim(img)[3L]), call. = FALSE)
+
+  if (anyNA(img))
+    stop("to_gray(): 'img' contains NA values in the RGB channels.",
+         call. = FALSE)
+
+  rng <- range(img)
+  if (rng[1L] < 0 || rng[2L] > 1)
+    stop(sprintf("to_gray(): values outside [0, 1]: observed [%g, %g]. ",
+                 rng[1L], rng[2L]),
+         "Some readers return [0, 255]; rescale before calling.",
+         call. = FALSE)
+
+  0.2126 * img[,,1L] + 0.7152 * img[,,2L] + 0.0722 * img[,,3L]
+}
+
 #' Convert an RGB image to black and white by luminance thresholding
 #'
 #' @param pics A 3D array (height x width x 3) with RGB channels between
