@@ -3,6 +3,7 @@
 export(Conte)
 export(anchor_rostrum)
 export(atrous_b3)
+export(binarize)
 export(build_log)
 export(coordsSort)
 export(coords_long)

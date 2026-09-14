@@ -64,6 +64,142 @@ toBW <- function(pics, threshold) {
   return(pics)
 }
 
+#' Binarise a luminance image
+#'
+#' Quantises the luma to \code{L} levels, applies a threshold (either chosen
+#' automatically by Otsu's method or supplied by the user) and normalises the
+#' polarity so that \code{TRUE} always marks the object.
+#'
+#' @param g Numeric matrix of luminance values in \code{[0, 1]}, as returned
+#'   by \code{\link{to_gray}}.
+#' @param method Either \code{"otsu"} (default) or \code{"fixed"}.
+#' @param threshold Only with \code{method = "fixed"}: an integer in
+#'   \code{[0, L - 2]}, expressed on the \strong{quantised scale}, not on
+#'   \code{[0, 1]}. It carries the same meaning as the value returned by
+#'   \code{\link{otsu}}: the last level belonging to the low class. Must be
+#'   \code{NULL} when \code{method = "otsu"}.
+#' @param L Integer. Number of histogram levels. Defaults to 256.
+#'
+#' @return A list with:
+#'   \describe{
+#'     \item{bw}{Logical matrix, \code{TRUE} marking the object. \code{NULL}
+#'       for degenerate images.}
+#'     \item{threshold}{The threshold actually applied, on the quantised
+#'       scale. \code{NA_integer_} for degenerate images.}
+#'     \item{separability}{Otsu's \code{eta*} evaluated at the applied
+#'       threshold. Defined for both methods, which allows the loss incurred
+#'       by a fixed threshold to be quantified against the optimum.}
+#'     \item{inverted}{Logical. \code{TRUE} if the mask had to be flipped.}
+#'     \item{method}{The method used.}
+#'     \item{L}{Number of levels used.}
+#'     \item{status}{\code{"ok"} or \code{"degenerate"}.}
+#'   }
+#'
+#' @details
+#' \strong{Scale.} Pixels are compared on the quantised scale
+#' (\code{g_q > threshold}), never by rescaling the threshold back to
+#' \code{[0, 1]}. The two are not equivalent: pixels whose \code{g * (L - 1)}
+#' falls in \code{[k - 0.5, k)} round to \code{k} and would change class
+#' depending on where the comparison is made. That half-level is a band of
+#' pixels along the otolith edge, precisely where \code{Conte} traces.
+#'
+#' \strong{Comparison.} The test is \code{>} and not \code{>=}, because the
+#' threshold is the last level of the low class.
+#'
+#' \strong{Polarity.} Otsu separates low from high levels but cannot know
+#' which group is the object. Polarity is normalised using an invariant of the
+#' photographic setup: the background touches the image border, a centred
+#' otolith does not. If most of the frame comes out \code{TRUE} the mask is
+#' flipped and \code{inverted} records it. A sudden rise in the proportion of
+#' inverted frames means something changed in the setup.
+#'
+#' @seealso \code{\link{to_gray}}, \code{\link{otsu}}
+#'
+#' @export
+binarize <- function(g, method = c("otsu", "fixed"), threshold = NULL,
+                     L = 256L) {
+
+  method <- match.arg(method)
+
+  if (length(L) != 1L || !is.numeric(L) || is.na(L) || L != round(L) || L < 2L)
+    stop("binarize(): 'L' must be a single integer >= 2.", call. = FALSE)
+  L <- as.integer(L)
+
+  if (!is.matrix(g) || !is.numeric(g))
+    stop("binarize(): 'g' must be a numeric matrix.", call. = FALSE)
+
+  if (anyNA(g))
+    stop("binarize(): 'g' contains NA values.", call. = FALSE)
+
+  rng <- range(g)
+  if (rng[1L] < 0 || rng[2L] > 1)
+    stop(sprintf("binarize(): 'g' outside [0, 1]: observed [%g, %g]. ",
+                 rng[1L], rng[2L]),
+         "Expected the output of to_gray().", call. = FALSE)
+
+  # An argument silently ignored is a bug waiting to happen: it is an error.
+  if (method == "otsu" && !is.null(threshold))
+    stop("binarize(): 'threshold' does not apply with method = \"otsu\". ",
+         "Use method = \"fixed\" to set it by hand.", call. = FALSE)
+
+  if (method == "fixed") {
+    if (is.null(threshold))
+      stop("binarize(): method = \"fixed\" requires 'threshold'.",
+           call. = FALSE)
+    if (length(threshold) != 1L || !is.numeric(threshold) ||
+        is.na(threshold) || threshold != round(threshold))
+      stop("binarize(): 'threshold' must be a single integer.", call. = FALSE)
+    if (threshold < 0L || threshold > L - 2L)
+      stop(sprintf("binarize(): 'threshold' = %g outside [0, %d]. ",
+                   threshold, L - 2L),
+           "It is given on the quantised scale, not on [0, 1]: for a cut at ",
+           sprintf("%.2f use %d.", 0.5, round(0.5 * (L - 1L))),
+           call. = FALSE)
+  }
+
+  # The only quantisation point in the whole pipeline.
+  g_q <- round(g * (L - 1L))
+
+  if (method == "otsu") {
+    res <- otsu(g_q, L = L)
+    thr <- res$threshold
+    sep <- res$separability
+    sts <- res$status
+  } else {
+    thr <- as.integer(threshold)
+    st  <- otsu_stats(g_q, L)
+    if (st$sigma_T == 0) {
+      sep <- NA_real_
+      sts <- "degenerate"
+    } else {
+      sep <- st$sigma_B[thr + 1L]
+      sep <- if (is.finite(sep)) sep / st$sigma_T else NA_real_
+      sts <- "ok"
+    }
+  }
+
+  if (sts == "degenerate")
+    return(list(bw = NULL, threshold = NA_integer_, separability = NA_real_,
+                inverted = NA, method = method, L = L,
+                status = "degenerate"))
+
+  bw <- g_q > thr
+
+  # Corners are counted twice; irrelevant for a mean over thousands of border
+  # pixels.
+  brd      <- c(bw[1L, ], bw[nrow(bw), ], bw[, 1L], bw[, ncol(bw)])
+  inverted <- mean(brd) > 0.5
+  if (inverted) bw <- !bw
+
+  list(bw           = bw,
+       threshold    = thr,
+       separability = sep,
+       inverted     = inverted,
+       method       = method,
+       L            = L,
+       status       = "ok")
+}
+
 #' Compute the signed area of a closed polygon (shoelace formula)
 #'
 #' The sign of the result indicates the traversal direction: positive for
