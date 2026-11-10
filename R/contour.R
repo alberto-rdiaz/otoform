@@ -194,6 +194,68 @@ normalize_area <- function(xy) {
   out
 }
 
+#' Centroid of a closed polygon
+#'
+#' Area centroid via the shoelace extension: each fan triangle from the origin
+#' contributes its centroid weighted by its signed area. Exact for the polygon
+#' and independent of vertex sampling. Assumes validated input.
+#'
+#' @param xy Numeric matrix, N x 2, vertices of a closed polygon.
+#' @return Numeric vector \code{c(x, y)}.
+#' @keywords internal
+polygon_centroid <- function(xy){
+
+  x <- xy[,1L]
+  y <- xy[,2L]
+
+  cross <- (x * c(y[-1],y[1])) - (c(x[-1],x[1]) * y)
+
+  A <- signed_area(xy)
+
+
+  Cx <- sum((x + c(x[-1], x[1])) * cross) / (6*A)
+  Cy <- sum((y + c(y[-1], y[1])) * cross) / (6*A)
+
+  c(Cx,Cy)
+
+
+}
+
+#' Centroid-distance signature of a closed contour
+#'
+#' Distance from the centroid of the enclosed region to each vertex, in the
+#' units of \code{xy}. This is the 1-D signal the wavelet decomposition works
+#' on. The centroid is that of the polygon's area (see
+#' \code{\link{polygon_centroid}}), not the mean of the vertices: on real
+#' otolith contours the two differ by tens of pixels because the rostrum
+#' contributes much boundary for little area.
+#'
+#' @param xy Numeric matrix, N x 2, vertices of a closed contour, typically
+#'   the output of \code{\link{normalize_area}}. No rescaling is applied here.
+#'
+#' @return Numeric vector \code{r} of length N, with attribute
+#'   \code{centroid}: the centroid \code{c(x, y)} used.
+#'
+#' @seealso \code{\link{normalize_area}}, \code{\link{atrous_b3}}
+#' @export
+centroid_distance <- function(xy) {
+
+  if (!is.matrix(xy) || !is.numeric(xy) || ncol(xy) != 2L)
+    stop("centroid_distance(): 'xy' must be a numeric matrix with 2 columns.",
+         call. = FALSE)
+  if (nrow(xy) < 3L)
+    stop("centroid_distance(): 'xy' needs at least 3 vertices.", call. = FALSE)
+  if (anyNA(xy))
+    stop("centroid_distance(): 'xy' contains NA values.", call. = FALSE)
+  if (signed_area(xy) == 0)
+    stop("centroid_distance(): degenerate contour (zero area).", call. = FALSE)
+
+  cen <- polygon_centroid(xy)
+  r   <- sqrt((xy[, 1L] - cen[1L])^2 + (xy[, 2L] - cen[2L])^2)
+  attr(r, "centroid") <- cen
+  r
+}
+
 #' Rotate a contour so that its rightmost point comes first
 #'
 #' Cyclically shifts a closed contour so that the point with the maximum x
