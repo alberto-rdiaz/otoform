@@ -8,7 +8,7 @@ Conte(I)
 }
 \arguments{
 \item{I}{A 2D binary matrix (0s and 1s), typically the output of
-\code{toBW}.}
+\code{binarize}.}
 }
 \value{
 A two-column matrix of contour coordinates, in counter-clockwise

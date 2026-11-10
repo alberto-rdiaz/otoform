@@ -1,0 +1,19 @@
+---
+title: "otoform-pipeline"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{otoform-pipeline}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(otoform)
+```

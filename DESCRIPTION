@@ -15,3 +15,7 @@ Imports:
     jpeg
 URL: https://github.com/alberto-rdiaz/otoform
 BugReports: https://github.com/alberto-rdiaz/otoform/issues
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

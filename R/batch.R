@@ -1,50 +1,82 @@
 #' Process a single otolith image
 #'
-#' Runs the full pipeline on one image: binarisation, contour extraction,
-#' resampling to a uniform grid, smoothing, centring, rotation and
-#' sub-pixel rostrum anchoring.
+#' Runs the full contour pipeline on one JPEG: luma conversion, binarisation,
+#' boundary tracing, arc-length resampling, smoothing, principal-axis rotation
+#' and rostrum anchoring. Any error is caught and reported in the result so
+#' that a batch is never interrupted by a single image.
 #'
-#' Errors are captured rather than propagated, so a failing image does not
-#' interrupt batch processing. Check the \code{status} field.
+#' @param path Character. Path to a JPEG file.
+#' @param method,threshold Binarisation settings, passed unchanged to
+#'   \code{\link{binarize}}, which validates them. \code{threshold} is given on
+#'   the quantised scale (the last level of the low class), not on
+#'   \code{[0, 1]}, and must be \code{NULL} when \code{method = "otsu"}.
+#' @param k Integer. Smoothing parameter passed to \code{\link{smoothout}}.
+#' @param grid_size Integer. Number of points of the arc-length resampling.
+#' @param n_points Integer. Number of points of the final contour.
 #'
-#' @param path Path to a JPEG image.
-#' @param threshold Binarisation threshold passed to \code{toBW}.
-#' @param k Number of smoothing passes.
-#' @param grid_size Size of the intermediate uniform resampling grid.
-#' @param n_points Number of points in the final normalised contour.
+#' @return A list with:
+#'   \describe{
+#'     \item{file}{Base name of \code{path}.}
+#'     \item{raw}{Traced contour in pixel coordinates. \code{NULL} on error.}
+#'     \item{points}{Final \code{n_points} x 2 contour with attributes
+#'       \code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
+#'       \code{NULL} on error.}
+#'     \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
+#'     \item{status}{The \code{status} attribute of \code{points}, or
+#'       \code{"error"}.}
+#'     \item{msg}{Error message; \code{NA} otherwise.}
+#'     \item{threshold}{Threshold actually applied, on the quantised scale.
+#'       With \code{method = "otsu"} it varies from image to image.}
+#'     \item{separability}{Otsu's eta evaluated at the applied threshold.}
+#'     \item{inverted}{Whether the mask polarity had to be flipped.}
+#'     \item{method}{Binarisation method used.}
+#'     \item{k}{Smoothing parameter used.}
+#'   }
 #'
-#' @return A list with the raw contour in image coordinates, the normalised
-#'   contour, the rotation angle, the parameters used, and a status field.
+#' @seealso \code{\link{process_directory}}, \code{\link{binarize}}
 #' @export
-#'
-process_image <- function(path, threshold = 0.5, k = 128L,
-                          grid_size = 4096L, n_points = 512L) {
+process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
+                          k = 128L, grid_size = 4096L, n_points = 512L) {
+
+  method <- match.arg(method)
 
   res <- tryCatch({
 
     img <- jpeg::readJPEG(path)
-    bw  <- toBW(img, threshold)
-    raw <- Conte(bw)
+    b   <- binarize(to_gray(img), method = method, threshold = threshold)
+    if (b$status != "ok")
+      stop("binarize(): degenerate image (a single grey level); ",
+           "nothing to trace.", call. = FALSE)
+    raw <- Conte(b$bw)
 
     fine    <- resample_arc(raw, grid_size)
     smooth  <- smoothout(fine, k)
     rotated <- rotation(smooth)
     points  <- anchor_rostrum(rotated, n_points)
 
-    list(raw    = raw,
-         points = points,
-         theta  = attr(rotated, "theta"),
-         status = attr(points, "status"),
-         msg    = NA_character_)
+    list(raw          = raw,
+         points       = points,
+         theta        = attr(rotated, "theta"),
+         status       = attr(points, "status"),
+         msg          = NA_character_,
+         threshold    = b$threshold,
+         separability = b$separability,
+         inverted     = b$inverted)
 
   }, error = function(e) {
-    list(raw = NULL, points = NULL, theta = NA_real_,
-         status = "error", msg = conditionMessage(e))
+    list(raw          = NULL,
+         points       = NULL,
+         theta        = NA_real_,
+         status       = "error",
+         msg          = conditionMessage(e),
+         threshold    = NA_integer_,
+         separability = NA_real_,
+         inverted     = NA)
   })
 
   c(list(file = basename(path)),
     res,
-    list(threshold = threshold, k = k))
+    list(method = method, k = k))
 }
 
 #' Process every image in a directory
@@ -53,7 +85,7 @@ process_image <- function(path, threshold = 0.5, k = 128L,
 #' recorded rather than propagated, so one bad image does not stop the run.
 #'
 #' @param dir Path to the folder containing the images.
-#' @param ... Arguments passed on to \code{process_image}.
+#' @inheritDotParams process_image -path
 #'
 #' @return A list of results, one per image, named by file.
 #' @export

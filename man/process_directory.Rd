@@ -9,7 +9,17 @@ process_directory(dir, ...)
 \arguments{
 \item{dir}{Path to the folder containing the images.}
 
-\item{...}{Arguments passed on to \code{process_image}.}
+\item{...}{
+  Arguments passed on to \code{\link[=process_image]{process_image}}
+  \describe{
+    \item{\code{method,threshold}}{Binarisation settings, passed unchanged to
+\code{\link{binarize}}, which validates them. \code{threshold} is given on
+the quantised scale (the last level of the low class), not on
+\code{[0, 1]}, and must be \code{NULL} when \code{method = "otsu"}.}
+    \item{\code{k}}{Integer. Smoothing parameter passed to \code{\link{smoothout}}.}
+    \item{\code{grid_size}}{Integer. Number of points of the arc-length resampling.}
+    \item{\code{n_points}}{Integer. Number of points of the final contour.}
+  }}
 }
 \value{
 A list of results, one per image, named by file.

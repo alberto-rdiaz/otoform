@@ -47,23 +47,6 @@ to_gray <- function(img) {
   0.2126 * img[,,1L] + 0.7152 * img[,,2L] + 0.0722 * img[,,3L]
 }
 
-#' Convert an RGB image to black and white by luminance thresholding
-#'
-#' @param pics A 3D array (height x width x 3) with RGB channels between
-#'   0 and 1, as returned by \code{jpeg::readJPEG}.
-#'
-#' @param threshold Numeric between 0 and 1. Luminance values at or above
-#'   the threshold become 1 (white); values below become 0 (black).
-#'
-#' @return A 2D matrix (height x width) of 0s and 1s.
-#' @export
-toBW <- function(pics, threshold) {
-  pics <- 0.2126 * pics[,,1] + 0.7152 * pics[,,2] + 0.0722 * pics[,,3]
-  pics[which(pics >= threshold)] <- 1
-  pics[which(pics <  threshold)] <- 0
-  return(pics)
-}
-
 #' Binarise a luminance image
 #'
 #' Quantises the luma to \code{L} levels, applies a threshold (either chosen
@@ -153,7 +136,7 @@ binarize <- function(g, method = c("otsu", "fixed"), threshold = NULL,
       stop(sprintf("binarize(): 'threshold' = %g outside [0, %d]. ",
                    threshold, L - 2L),
            "It is given on the quantised scale, not on [0, 1]: for a cut at ",
-           sprintf("%.2f use %d.", 0.5, round(0.5 * (L - 1L))),
+           sprintf("%.2f use %d.", 0.5, floor(0.5 * (L - 1L) - 0.5)),
            call. = FALSE)
   }
 
@@ -206,13 +189,13 @@ binarize <- function(g, method = c("otsu", "fixed"), threshold = NULL,
 #' counter-clockwise, negative for clockwise. Used internally to enforce a
 #' consistent contour orientation.
 #'
-#' @param x,y Numeric vectors of vertex coordinates.
+#' @param M A 2D matrix of coordinates.
 #'
 #' @return A single numeric value. Positive if counter-clockwise.
 #' @keywords internal
 #'
-signed_area <- function(x, y) {
-  sum(x * c(y[-1], y[1]) - c(x[-1], x[1]) * y) / 2
+signed_area <- function(M) {
+  sum(M[,1L] * c(M[,2L][-1], M[,2L][1]) - c(M[,1L][-1], M[,1L][1]) * M[,2L]) / 2
 }
 
 #' Trace the contour of a binary object (Moore boundary tracing)
@@ -221,7 +204,7 @@ signed_area <- function(x, y) {
 #' by scanning inward from the image edge.
 #'
 #' @param I A 2D binary matrix (0s and 1s), typically the output of
-#'   \code{toBW}.
+#'   \code{binarize}.
 #'
 #' @return A two-column matrix of contour coordinates, in counter-clockwise
 #'   order.
@@ -257,7 +240,7 @@ Conte <- function(I) {
 
   out <- cbind(x = Y[-1], y = (dim(I)[1] - X)[-1])
 
-  if (signed_area(out[, 1L], out[, 2L]) < 0) {
+  if (signed_area(out) < 0) {
     out <- out[rev(seq_len(nrow(out))), , drop = FALSE]
   }
 

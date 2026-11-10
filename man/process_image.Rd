@@ -6,33 +6,53 @@
 \usage{
 process_image(
   path,
-  threshold = 0.5,
+  method = c("otsu", "fixed"),
+  threshold = NULL,
   k = 128L,
   grid_size = 4096L,
   n_points = 512L
 )
 }
 \arguments{
-\item{path}{Path to a JPEG image.}
+\item{path}{Character. Path to a JPEG file.}
 
-\item{threshold}{Binarisation threshold passed to \code{toBW}.}
+\item{method, threshold}{Binarisation settings, passed unchanged to
+\code{\link{binarize}}, which validates them. \code{threshold} is given on
+the quantised scale (the last level of the low class), not on
+\code{[0, 1]}, and must be \code{NULL} when \code{method = "otsu"}.}
 
-\item{k}{Number of smoothing passes.}
+\item{k}{Integer. Smoothing parameter passed to \code{\link{smoothout}}.}
 
-\item{grid_size}{Size of the intermediate uniform resampling grid.}
+\item{grid_size}{Integer. Number of points of the arc-length resampling.}
 
-\item{n_points}{Number of points in the final normalised contour.}
+\item{n_points}{Integer. Number of points of the final contour.}
 }
 \value{
-A list with the raw contour in image coordinates, the normalised
-contour, the rotation angle, the parameters used, and a status field.
+A list with:
+\describe{
+\item{file}{Base name of \code{path}.}
+\item{raw}{Traced contour in pixel coordinates. \code{NULL} on error.}
+\item{points}{Final \code{n_points} x 2 contour with attributes
+\code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
+\code{NULL} on error.}
+\item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
+\item{status}{The \code{status} attribute of \code{points}, or
+\code{"error"}.}
+\item{msg}{Error message; \code{NA} otherwise.}
+\item{threshold}{Threshold actually applied, on the quantised scale.
+With \code{method = "otsu"} it varies from image to image.}
+\item{separability}{Otsu's eta evaluated at the applied threshold.}
+\item{inverted}{Whether the mask polarity had to be flipped.}
+\item{method}{Binarisation method used.}
+\item{k}{Smoothing parameter used.}
+}
 }
 \description{
-Runs the full pipeline on one image: binarisation, contour extraction,
-resampling to a uniform grid, smoothing, centring, rotation and
-sub-pixel rostrum anchoring.
+Runs the full contour pipeline on one JPEG: luma conversion, binarisation,
+boundary tracing, arc-length resampling, smoothing, principal-axis rotation
+and rostrum anchoring. Any error is caught and reported in the result so
+that a batch is never interrupted by a single image.
 }
-\details{
-Errors are captured rather than propagated, so a failing image does not
-interrupt batch processing. Check the \code{status} field.
+\seealso{
+\code{\link{process_directory}}, \code{\link{binarize}}
 }

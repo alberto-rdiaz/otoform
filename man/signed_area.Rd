@@ -4,10 +4,10 @@
 \alias{signed_area}
 \title{Compute the signed area of a closed polygon (shoelace formula)}
 \usage{
-signed_area(x, y)
+signed_area(M)
 }
 \arguments{
-\item{x, y}{Numeric vectors of vertex coordinates.}
+\item{M}{A 2D matrix of coordinates.}
 }
 \value{
 A single numeric value. Positive if counter-clockwise.
