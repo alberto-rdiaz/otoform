@@ -54,7 +54,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
     if (b$status != "ok")
       stop("binarize(): degenerate image (a single grey level); ",
            "nothing to trace.", call. = FALSE)
-    raw <- Conte(b$bw)
+    raw <- Conte(keep_largest(b$bw))
 
     fine    <- resample_arc(raw, grid_size)
     smooth  <- smoothout(fine, k)

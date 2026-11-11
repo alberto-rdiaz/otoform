@@ -211,12 +211,11 @@ signed_area <- function(M) {
 #' @export
 #'
 Conte <- function(I) {
-  x <- (c(floor(dim(I)[1]/2), floor(dim(I)[2]/2)))
-  x[1] <- dim(I)[1] - x[1]
 
-  while (x[2] > 1 && abs(I[x[1], x[2]] - I[x[1], (x[2]-1)]) < 0.1) {
-    x[2] <- x[2] - 1
-  }
+  idx <- which(I == 1, arr.ind = TRUE)
+  if (nrow(idx) == 0L) stop("Conte(): empty mask.", call. = FALSE)
+  idx <- idx[order(idx[, 1L], idx[, 2L]), , drop = FALSE]
+  x   <- as.integer(idx[1L, ])
 
   a <- 1
   M <- matrix(c(0,-1,-1,-1,0,1,1,1,1,1,0,-1,-1,-1,0,1),2,8,byrow=TRUE)
@@ -244,5 +243,38 @@ Conte <- function(I) {
     out <- out[rev(seq_len(nrow(out))), , drop = FALSE]
   }
 
+  out
+}
+
+#' Keep the largest connected component of a binary mask
+#'
+#' Removes every object except the largest 8-connected component, so that
+#' dust, debris and scale bars do not reach \code{\link{Conte}}.
+#'
+#' @param bw Logical matrix, \code{TRUE} marking object pixels, as returned
+#'   in \code{binarize()$bw}.
+#'
+#' @return Logical matrix of the same size with only the largest component
+#'   \code{TRUE}, carrying the attribute \code{n_components} (number of
+#'   components found, a quality-control diagnostic).
+#'
+#' @export
+keep_largest <- function(bw) {
+
+  if (!is.matrix(bw) || !is.logical(bw))
+    stop("keep_largest(): 'bw' must be a logical matrix.", call. = FALSE)
+
+  lab <- mmand::components(bw, mmand::shapeKernel(c(3, 3), type = "box"))
+  sz  <- tabulate(lab[!is.na(lab)])
+  if (length(sz) == 0L)
+    stop("keep_largest(): empty mask, no object found.", call. = FALSE)
+
+  out <- !is.na(lab) & lab == which.max(sz)
+
+  brd <- c(out[1L, ], out[nrow(out), ], out[, 1L], out[, ncol(out)])
+  if (any(brd))
+    stop("keep_largest(): the object touches the image border.", call. = FALSE)
+
+  attr(out, "n_components") <- length(sz)
   out
 }
