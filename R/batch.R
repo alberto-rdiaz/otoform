@@ -122,4 +122,63 @@ process_directory <- function(dir, ...) {
   out
 }
 
+#' Wavelet-decompose every signature in a collection
+#'
+#' Applies \code{\link{atrous_b3}} to the centroid-distance signature
+#' \code{r} of each element returned by \code{\link{process_directory}} (or
+#' by \code{lapply} over \code{\link{process_image}}). Elements whose
+#' contour stage did not succeed are carried through with their status, so
+#' the output is always parallel to the input. Failures in the decomposition
+#' itself are recorded rather than propagated.
+#'
+#' @param res List returned by \code{\link{process_directory}}: one element
+#'   per image, each carrying \code{file}, \code{r} and \code{status}.
+#' @param J Integer. Number of decomposition levels, passed to
+#'   \code{\link{atrous_b3}}, which validates it against the signature length.
+#'
+#' @return A list with one element per input element, named by \code{file}
+#'   and carrying attribute \code{J}. Each element is a list with:
+#'   \describe{
+#'     \item{file}{Image file name.}
+#'     \item{c}{Approximations \code{c[[1]]} (the signature itself) to
+#'       \code{c[[J + 1]]}. \code{NULL} if not computed.}
+#'     \item{w}{Details \code{w[[1]]} to \code{w[[J]]}, with
+#'       \code{w[[j]] = c[[j]] - c[[j + 1]]}. \code{NULL} if not computed.}
+#'     \item{status}{\code{"ok"}, \code{"error"}, or the status inherited
+#'       from the contour stage.}
+#'     \item{msg}{Error message; \code{NA} otherwise.}
+#'   }
+#'
+#' @seealso \code{\link{process_directory}}, \code{\link{atrous_b3}}
+#' @export
+process_contours <- function(res, J = 6L) {
 
+  if (!is.list(res) || length(res) == 0L)
+    stop("process_contours(): 'res' must be a non-empty list, as returned ",
+         "by process_directory().", call. = FALSE)
+
+  out <- vector("list", length(res))
+  names(out) <- vapply(res, function(z) as.character(z$file), character(1L))
+
+  for (i in seq_along(res)) {
+    z <- res[[i]]
+
+    if (identical(z$status, "ok") && !is.null(z$r)) {
+      out[[i]] <- tryCatch({
+        w <- atrous_b3(z$r, J = J)
+        list(file = z$file, c = w$c, w = w$w,
+             status = "ok", msg = NA_character_)
+      }, error = function(e) {
+        list(file = z$file, c = NULL, w = NULL,
+             status = "error", msg = conditionMessage(e))
+      })
+    } else {
+      out[[i]] <- list(file = z$file, c = NULL, w = NULL,
+                       status = if (is.null(z$status)) "error" else z$status,
+                       msg    = if (is.null(z$msg)) NA_character_ else z$msg)
+    }
+  }
+
+  attr(out, "J") <- J
+  out
+}
