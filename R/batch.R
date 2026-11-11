@@ -21,6 +21,14 @@
 #'     \item{points}{Final \code{n_points} x 2 contour with attributes
 #'       \code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
 #'       \code{NULL} on error.}
+#'     \item{k}{Smoothing parameter used.}
+#'     \item{r}{Centroid-distance signature of the contour after
+#'       normalisation to unit area: distance from the area centroid to each
+#'       of the \code{n_points} vertices, dimensionless. Carries the attribute
+#'       \code{centroid}. This is the input of \code{\link{atrous_b3}}.
+#'       \code{NULL} on error.}
+#'     \item{area}{Area enclosed by \code{points}, in squared pixels, before
+#'       normalisation. \code{NA} on error.}
 #'     \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
 #'     \item{status}{The \code{status} attribute of \code{points}, or
 #'       \code{"error"}.}
@@ -30,7 +38,6 @@
 #'     \item{separability}{Otsu's eta evaluated at the applied threshold.}
 #'     \item{inverted}{Whether the mask polarity had to be flipped.}
 #'     \item{method}{Binarisation method used.}
-#'     \item{k}{Smoothing parameter used.}
 #'   }
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{binarize}}
@@ -53,6 +60,8 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
     smooth  <- smoothout(fine, k)
     rotated <- rotation(smooth)
     points  <- anchor_rostrum(rotated, n_points)
+    norm    <- normalize_area(points)
+    r       <- centroid_distance(norm)
 
     list(raw          = raw,
          points       = points,
@@ -61,7 +70,9 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          msg          = NA_character_,
          threshold    = b$threshold,
          separability = b$separability,
-         inverted     = b$inverted)
+         inverted     = b$inverted,
+         r            = r,
+         area         = attr(norm, "area"))
 
   }, error = function(e) {
     list(raw          = NULL,
@@ -71,7 +82,9 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          msg          = conditionMessage(e),
          threshold    = NA_integer_,
          separability = NA_real_,
-         inverted     = NA)
+         inverted     = NA,
+         r            = NULL,
+         area         = NA_real_)
   })
 
   c(list(file = basename(path)),
@@ -108,3 +121,5 @@ process_directory <- function(dir, ...) {
 
   out
 }
+
+

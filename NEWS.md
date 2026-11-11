@@ -6,3 +6,5 @@
   passed on to `binarize()`. The default is now Otsu's method.
 * Fixed the hint in `binarize()`'s range error: a cut at 0.5 corresponds to
   `threshold = 127`, not 128.
+* `process_image()` also returns the centroid-distance signature `r` (unit area,
+  area centroid) and the enclosed area in squared pixels.

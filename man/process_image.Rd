@@ -35,6 +35,14 @@ A list with:
 \item{points}{Final \code{n_points} x 2 contour with attributes
 \code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
 \code{NULL} on error.}
+\item{k}{Smoothing parameter used.}
+\item{r}{Centroid-distance signature of the contour after
+normalisation to unit area: distance from the area centroid to each
+of the \code{n_points} vertices, dimensionless. Carries the attribute
+\code{centroid}. This is the input of \code{\link{atrous_b3}}.
+\code{NULL} on error.}
+\item{area}{Area enclosed by \code{points}, in squared pixels, before
+normalisation. \code{NA} on error.}
 \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
 \item{status}{The \code{status} attribute of \code{points}, or
 \code{"error"}.}
@@ -44,7 +52,6 @@ With \code{method = "otsu"} it varies from image to image.}
 \item{separability}{Otsu's eta evaluated at the applied threshold.}
 \item{inverted}{Whether the mask polarity had to be flipped.}
 \item{method}{Binarisation method used.}
-\item{k}{Smoothing parameter used.}
 }
 }
 \description{
