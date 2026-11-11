@@ -1,9 +1,11 @@
 #' Process a single otolith image
 #'
 #' Runs the full contour pipeline on one JPEG: luma conversion, binarisation,
-#' boundary tracing, arc-length resampling, smoothing, principal-axis rotation
-#' and rostrum anchoring. Any error is caught and reported in the result so
-#' that a batch is never interrupted by a single image.
+#' largest-component selection, boundary tracing, arc-length resampling,
+#' smoothing, principal-axis rotation, rostrum anchoring, unit-area
+#' normalisation and centroid-distance signature. Any error is caught and
+#' reported in the result so that a batch is never interrupted by a single
+#' image.
 #'
 #' @param path Character. Path to a JPEG file.
 #' @param method,threshold Binarisation settings, passed unchanged to
@@ -13,15 +15,23 @@
 #' @param k Integer. Smoothing parameter passed to \code{\link{smoothout}}.
 #' @param grid_size Integer. Number of points of the arc-length resampling.
 #' @param n_points Integer. Number of points of the final contour.
+#' @param min_area_ratio Numeric. Lower bound for the ratio between the area
+#'   of the traced polygon and the pixel count of the component it was traced
+#'   from. On the 10 reference images the ratio lies in 0.9975-1.007: the
+#'   polygon through pixel centres is ~0.25\% smaller than the pixel count, and
+#'   interior pores push it slightly above 1. A ratio clearly below 1 can only
+#'   mean a partial or wrong polygon, so the image is reported as an error.
+#'   The default leaves a margin of about five times the discretisation
+#'   effect. Values above 1 are never an error: they measure interior holes in
+#'   the mask and are kept in \code{area_ratio} for quality control.
 #'
 #' @return A list with:
 #'   \describe{
 #'     \item{file}{Base name of \code{path}.}
 #'     \item{raw}{Traced contour in pixel coordinates. \code{NULL} on error.}
-#'     \item{points}{Final \code{n_points} x 2 contour with attributes
-#'       \code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
-#'       \code{NULL} on error.}
-#'     \item{k}{Smoothing parameter used.}
+#'     \item{points}{Final \code{n_points} x 2 contour in pixels with
+#'       attributes \code{status}, \code{s_star}, \code{delta} and
+#'       \code{perimeter}. \code{NULL} on error.}
 #'     \item{r}{Centroid-distance signature of the contour after
 #'       normalisation to unit area: distance from the area centroid to each
 #'       of the \code{n_points} vertices, dimensionless. Carries the attribute
@@ -37,13 +47,20 @@
 #'       With \code{method = "otsu"} it varies from image to image.}
 #'     \item{separability}{Otsu's eta evaluated at the applied threshold.}
 #'     \item{inverted}{Whether the mask polarity had to be flipped.}
+#'     \item{n_components}{Number of connected components in the mask before
+#'       keeping the largest; a quality-control diagnostic.}
+#'     \item{area_ratio}{Polygon area over pixel count of the traced
+#'       component; see \code{min_area_ratio}.}
 #'     \item{method}{Binarisation method used.}
+#'     \item{k}{Smoothing parameter used.}
 #'   }
 #'
-#' @seealso \code{\link{process_directory}}, \code{\link{binarize}}
+#' @seealso \code{\link{process_directory}}, \code{\link{binarize}},
+#'   \code{\link{keep_largest}}, \code{\link{Conte}}
 #' @export
 process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
-                          k = 128L, grid_size = 4096L, n_points = 512L) {
+                          k = 128L, grid_size = 4096L, n_points = 512L,
+                          min_area_ratio = 0.95) {
 
   method <- match.arg(method)
 
@@ -54,37 +71,50 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
     if (b$status != "ok")
       stop("binarize(): degenerate image (a single grey level); ",
            "nothing to trace.", call. = FALSE)
-    raw <- Conte(keep_largest(b$bw))
+
+    m   <- keep_largest(b$bw)
+    raw <- Conte(m)
+
+    area_ratio <- abs(signed_area(raw)) / sum(m)
+    if (area_ratio < min_area_ratio)
+      stop(sprintf("Conte(): traced polygon covers only %.1f%% of the ",
+                   100 * area_ratio),
+           "component area; partial or wrong contour.", call. = FALSE)
 
     fine    <- resample_arc(raw, grid_size)
     smooth  <- smoothout(fine, k)
     rotated <- rotation(smooth)
     points  <- anchor_rostrum(rotated, n_points)
-    norm    <- normalize_area(points)
-    r       <- centroid_distance(norm)
+
+    norm <- normalize_area(points)
+    r    <- centroid_distance(norm)
 
     list(raw          = raw,
          points       = points,
+         r            = r,
+         area         = attr(norm, "area"),
          theta        = attr(rotated, "theta"),
          status       = attr(points, "status"),
          msg          = NA_character_,
          threshold    = b$threshold,
          separability = b$separability,
          inverted     = b$inverted,
-         r            = r,
-         area         = attr(norm, "area"))
+         n_components = attr(m, "n_components"),
+         area_ratio   = area_ratio)
 
   }, error = function(e) {
     list(raw          = NULL,
          points       = NULL,
+         r            = NULL,
+         area         = NA_real_,
          theta        = NA_real_,
          status       = "error",
          msg          = conditionMessage(e),
          threshold    = NA_integer_,
          separability = NA_real_,
          inverted     = NA,
-         r            = NULL,
-         area         = NA_real_)
+         n_components = NA_integer_,
+         area_ratio   = NA_real_)
   })
 
   c(list(file = basename(path)),

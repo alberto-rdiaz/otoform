@@ -10,7 +10,8 @@ process_image(
   threshold = NULL,
   k = 128L,
   grid_size = 4096L,
-  n_points = 512L
+  n_points = 512L,
+  min_area_ratio = 0.95
 )
 }
 \arguments{
@@ -26,16 +27,25 @@ the quantised scale (the last level of the low class), not on
 \item{grid_size}{Integer. Number of points of the arc-length resampling.}
 
 \item{n_points}{Integer. Number of points of the final contour.}
+
+\item{min_area_ratio}{Numeric. Lower bound for the ratio between the area
+of the traced polygon and the pixel count of the component it was traced
+from. On the 10 reference images the ratio lies in 0.9975-1.007: the
+polygon through pixel centres is ~0.25\\% smaller than the pixel count, and
+interior pores push it slightly above 1. A ratio clearly below 1 can only
+mean a partial or wrong polygon, so the image is reported as an error.
+The default leaves a margin of about five times the discretisation
+effect. Values above 1 are never an error: they measure interior holes in
+the mask and are kept in \code{area_ratio} for quality control.}
 }
 \value{
 A list with:
 \describe{
 \item{file}{Base name of \code{path}.}
 \item{raw}{Traced contour in pixel coordinates. \code{NULL} on error.}
-\item{points}{Final \code{n_points} x 2 contour with attributes
-\code{status}, \code{s_star}, \code{delta} and \code{perimeter}.
-\code{NULL} on error.}
-\item{k}{Smoothing parameter used.}
+\item{points}{Final \code{n_points} x 2 contour in pixels with
+attributes \code{status}, \code{s_star}, \code{delta} and
+\code{perimeter}. \code{NULL} on error.}
 \item{r}{Centroid-distance signature of the contour after
 normalisation to unit area: distance from the area centroid to each
 of the \code{n_points} vertices, dimensionless. Carries the attribute
@@ -51,15 +61,23 @@ normalisation. \code{NA} on error.}
 With \code{method = "otsu"} it varies from image to image.}
 \item{separability}{Otsu's eta evaluated at the applied threshold.}
 \item{inverted}{Whether the mask polarity had to be flipped.}
+\item{n_components}{Number of connected components in the mask before
+keeping the largest; a quality-control diagnostic.}
+\item{area_ratio}{Polygon area over pixel count of the traced
+component; see \code{min_area_ratio}.}
 \item{method}{Binarisation method used.}
+\item{k}{Smoothing parameter used.}
 }
 }
 \description{
 Runs the full contour pipeline on one JPEG: luma conversion, binarisation,
-boundary tracing, arc-length resampling, smoothing, principal-axis rotation
-and rostrum anchoring. Any error is caught and reported in the result so
-that a batch is never interrupted by a single image.
+largest-component selection, boundary tracing, arc-length resampling,
+smoothing, principal-axis rotation, rostrum anchoring, unit-area
+normalisation and centroid-distance signature. Any error is caught and
+reported in the result so that a batch is never interrupted by a single
+image.
 }
 \seealso{
-\code{\link{process_directory}}, \code{\link{binarize}}
+\code{\link{process_directory}}, \code{\link{binarize}},
+\code{\link{keep_largest}}, \code{\link{Conte}}
 }
