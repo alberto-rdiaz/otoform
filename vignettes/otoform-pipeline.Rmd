@@ -49,6 +49,21 @@ branch returns the same names with `NULL`/`NA`.
 plotted, and what measurements will be computed from. `r` is the input of
 stage 2. Attributes are provenance, never a data source.
 
+### Outputs of `process_directory()`
+
+`process_directory(dir, out_dir = file.path(dir, "otoform"), overlay = FALSE, ...)`
+processes every JPEG in `dir` and writes, in `out_dir` (one per locality
+folder, next to the images):
+
+| File | Content | When written |
+|---|---|---|
+| `log.csv` | one row per image with the scalar fields of the result: `file`, `status`, `msg`, `method`, `threshold`, `separability`, `inverted`, `n_components`, `area_ratio`, `area`, `theta`, `k` (internal `log_row()`) | appended after each image, so an interrupted run keeps what was done |
+| `results.rds` | the full list of results (`raw`, `points`, `r`, attributes), for R | at the end |
+| `overlay/<file>.png` | the image with `points` mapped back to image coordinates (red dots), `raw` (grey line), the rostrum anchor (`points[1, ]`, green) and the area centroid (black); `write_overlay()`, via `overlay_file` in `process_image()` | per image, only with `overlay = TRUE` |
+
+The source images are never modified or copied. `list.files()` is not
+recursive, so `out_dir` inside `dir` is not scanned for images.
+
 ## Stage 2: signature to wavelet decomposition
 
 Unit: `atrous_b3(r, J)`. Batch: `process_contours(res, J = 6)`.
