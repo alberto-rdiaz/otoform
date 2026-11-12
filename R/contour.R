@@ -66,43 +66,76 @@ smoothout <- function(M, k) {
   M
 }
 
-#' Centre and rotate a contour onto its principal axis
+#' Centre a contour and rotate it onto its principal axis
 #'
-#' Translates the contour to the origin and rotates it so that its principal
-#' axis aligns with the x axis. The 180-degree ambiguity of the principal
-#' axis is resolved by assuming the rostrum points right in the source image.
+#' Translates the contour so that the area centroid of the enclosed region is
+#' at the origin and rotates it so that the major principal axis of the region
+#' lies on the x axis. Centre and axis come from the polygon's area moments
+#' (\code{\link{polygon_moments}}), so neither depends on how densely the
+#' boundary is sampled, and the centre is the same point used later by
+#' \code{\link{centroid_distance}}.
 #'
-#' @param M A two-column matrix of contour coordinates.
+#' @details
+#' A principal axis is a line, not a direction: \code{theta} and
+#' \code{theta + pi} describe the same axis. The angle is restricted to
+#' \code{(-pi/2, pi/2]}, so the contour is never turned by more than a quarter
+#' turn and whatever pointed right in the image still points right afterwards.
+#' The 180-degree ambiguity is therefore resolved by the photographic protocol
+#' of the package: every otolith is photographed with the rostrum to the
+#' right. The function does not check this.
 #'
-#' @return A two-column matrix, centred and rotated, with the rotation angle
-#'   stored as the attribute \code{theta}.
+#' If the two principal moments are (nearly) equal the axis is undefined; the
+#' contour is returned centred but unrotated, with \code{status = "isotropic"}
+#' and \code{theta = NA}.
+#'
+#' @param xy Numeric matrix, N x 2, vertices of a closed contour in pixels.
+#' @param tol Numeric. Anisotropy below which the contour is treated as
+#'   isotropic. Anisotropy is \code{(l1 - l2) / (l1 + l2)} for the principal
+#'   moments \code{l1 >= l2}: 0 for a circle, 1 for a segment.
+#'
+#' @return The centred and rotated N x 2 matrix, with attributes
+#'   \code{theta} (angle removed, radians; \code{NA} if isotropic),
+#'   \code{center} (area centroid subtracted, input units),
+#'   \code{anisotropy} and \code{status} (\code{"ok"} or \code{"isotropic"}).
+#'
 #' @export
-#'
-rotation <- function(M) {
-  stopifnot(is.matrix(M), ncol(M) == 2L, nrow(M) >= 3L)
+rotation <- function(xy, tol = 1e-3) {
 
-  # Centrar en el origen
-  Mc <- cbind(M[, 1L] - mean(M[, 1L]),
-              M[, 2L] - mean(M[, 2L]))
+  if (!is.matrix(xy) || !is.numeric(xy) || ncol(xy) != 2L)
+    stop("rotation(): 'xy' must be a numeric matrix with 2 columns.",
+         call. = FALSE)
+  if (nrow(xy) < 3L)
+    stop("rotation(): 'xy' needs at least 3 vertices.", call. = FALSE)
+  if (anyNA(xy))
+    stop("rotation(): 'xy' contains NA values.", call. = FALSE)
 
-  # Eje principal: autovector asociado al autovalor mayor
-  v <- eigen(stats::cov(Mc))$vectors[, 1L]
-  theta <- atan2(v[2L], v[1L])
+  pm     <- polygon_moments(xy)            # stops on zero area
+  center <- pm$centroid
+  xc     <- sweep(xy, 2L, center)          # keeps dimnames
+  sxx <- pm$mxx; syy <- pm$myy; sxy <- pm$mxy
 
-  R <- matrix(c( cos(theta), sin(theta),
-                 -sin(theta), cos(theta)), 2L, 2L, byrow = TRUE)
+  mid <- (sxx + syy) / 2
+  amp <- sqrt(((sxx - syy) / 2)^2 + sxy^2)
+  anisotropy <- amp / mid                  # (l1 - l2) / (l1 + l2)
 
-  Mr <- Mc %*% t(R)
-
-  # Resolver la ambiguedad de 180 grados:
-  # el rostrum debe quedar en x positiva
-  if (abs(min(Mr[, 1L])) > abs(max(Mr[, 1L]))) {
-    Mr <- -Mr
-    theta <- theta + pi
+  if (anisotropy < tol) {
+    out    <- xc
+    theta  <- NA_real_
+    status <- "isotropic"
+  } else {
+    theta <- 0.5 * atan2(2 * sxy, sxx - syy)   # in (-pi/2, pi/2]
+    R <- matrix(c(cos(theta), sin(theta),
+                  -sin(theta), cos(theta)), 2L, 2L, byrow = TRUE)
+    out <- xc %*% t(R)
+    dimnames(out) <- dimnames(xy)
+    status <- "ok"
   }
 
-  attr(Mr, "theta") <- theta
-  Mr
+  attr(out, "theta")      <- theta
+  attr(out, "center")     <- center
+  attr(out, "anisotropy") <- anisotropy
+  attr(out, "status")     <- status
+  out
 }
 
 #' Resample a contour with the rightmost point anchored at index 1
@@ -194,32 +227,53 @@ normalize_area <- function(xy) {
   out
 }
 
+#' Area, centroid and second central moments of a closed polygon
+#'
+#' Shoelace-type sums over the edges. Every quantity refers to the enclosed
+#' region, not to the vertices, so none depends on how densely the boundary
+#' is sampled. The result is the same for clockwise and counter-clockwise
+#' traversal. Assumes validated input.
+#'
+#' @param xy Numeric matrix, N x 2, vertices of a simple closed polygon.
+#'
+#' @return A list: \code{area} (positive), \code{centroid} (\code{c(x, y)}),
+#'   and the central second moments \code{mxx} (\eqn{\int (x - C_x)^2 dA}),
+#'   \code{myy} (\eqn{\int (y - C_y)^2 dA}) and \code{mxy}
+#'   (\eqn{\int (x - C_x)(y - C_y) dA}).
+#' @keywords internal
+polygon_moments <- function(xy) {
+
+  x  <- xy[, 1L]
+  y  <- xy[, 2L]
+  xn <- c(x[-1L], x[1L])
+  yn <- c(y[-1L], y[1L])
+  cross <- x * yn - xn * y
+
+  A <- signed_area(xy)
+  if (!is.finite(A) || A == 0)
+    stop("polygon_moments(): zero or undefined area.", call. = FALSE)
+  s <- sign(A)          # orientation-independent moments
+  A <- abs(A)
+
+  cx <- s * sum((x + xn) * cross) / (6 * A)
+  cy <- s * sum((y + yn) * cross) / (6 * A)
+
+  mxx <- s * sum((x * x + x * xn + xn * xn) * cross) / 12 - A * cx * cx
+  myy <- s * sum((y * y + y * yn + yn * yn) * cross) / 12 - A * cy * cy
+  mxy <- s * sum((x * yn + 2 * x * y + 2 * xn * yn + xn * y) * cross) / 24 -
+    A * cx * cy
+
+  list(area = A, centroid = c(cx, cy), mxx = mxx, myy = myy, mxy = mxy)
+}
+
 #' Centroid of a closed polygon
 #'
-#' Area centroid via the shoelace extension: each fan triangle from the origin
-#' contributes its centroid weighted by its signed area. Exact for the polygon
-#' and independent of vertex sampling. Assumes validated input.
-#'
+#' The area centroid, from \code{\link{polygon_moments}}. Assumes validated
+#' input.
 #' @param xy Numeric matrix, N x 2, vertices of a closed polygon.
 #' @return Numeric vector \code{c(x, y)}.
 #' @keywords internal
-polygon_centroid <- function(xy){
-
-  x <- xy[,1L]
-  y <- xy[,2L]
-
-  cross <- (x * c(y[-1],y[1])) - (c(x[-1],x[1]) * y)
-
-  A <- signed_area(xy)
-
-
-  Cx <- sum((x + c(x[-1], x[1])) * cross) / (6*A)
-  Cy <- sum((y + c(y[-1], y[1])) * cross) / (6*A)
-
-  c(Cx,Cy)
-
-
-}
+polygon_centroid <- function(xy) polygon_moments(xy)$centroid
 
 #' Centroid-distance signature of a closed contour
 #'

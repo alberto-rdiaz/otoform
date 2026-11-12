@@ -2,19 +2,41 @@
 % Please edit documentation in R/contour.R
 \name{rotation}
 \alias{rotation}
-\title{Centre and rotate a contour onto its principal axis}
+\title{Centre a contour and rotate it onto its principal axis}
 \usage{
-rotation(M)
+rotation(xy, tol = 0.001)
 }
 \arguments{
-\item{M}{A two-column matrix of contour coordinates.}
+\item{xy}{Numeric matrix, N x 2, vertices of a closed contour in pixels.}
+
+\item{tol}{Numeric. Anisotropy below which the contour is treated as
+isotropic. Anisotropy is \code{(l1 - l2) / (l1 + l2)} for the principal
+moments \code{l1 >= l2}: 0 for a circle, 1 for a segment.}
 }
 \value{
-A two-column matrix, centred and rotated, with the rotation angle
-stored as the attribute \code{theta}.
+The centred and rotated N x 2 matrix, with attributes
+\code{theta} (angle removed, radians; \code{NA} if isotropic),
+\code{center} (area centroid subtracted, input units),
+\code{anisotropy} and \code{status} (\code{"ok"} or \code{"isotropic"}).
 }
 \description{
-Translates the contour to the origin and rotates it so that its principal
-axis aligns with the x axis. The 180-degree ambiguity of the principal
-axis is resolved by assuming the rostrum points right in the source image.
+Translates the contour so that the area centroid of the enclosed region is
+at the origin and rotates it so that the major principal axis of the region
+lies on the x axis. Centre and axis come from the polygon's area moments
+(\code{\link{polygon_moments}}), so neither depends on how densely the
+boundary is sampled, and the centre is the same point used later by
+\code{\link{centroid_distance}}.
+}
+\details{
+A principal axis is a line, not a direction: \code{theta} and
+\code{theta + pi} describe the same axis. The angle is restricted to
+\code{(-pi/2, pi/2]}, so the contour is never turned by more than a quarter
+turn and whatever pointed right in the image still points right afterwards.
+The 180-degree ambiguity is therefore resolved by the photographic protocol
+of the package: every otolith is photographed with the rostrum to the
+right. The function does not check this.
+
+If the two principal moments are (nearly) equal the axis is undefined; the
+contour is returned centred but unrotated, with \code{status = "isotropic"}
+and \code{theta = NA}.
 }

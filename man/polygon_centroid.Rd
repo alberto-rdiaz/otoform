@@ -13,8 +13,7 @@ polygon_centroid(xy)
 Numeric vector \code{c(x, y)}.
 }
 \description{
-Area centroid via the shoelace extension: each fan triangle from the origin
-contributes its centroid weighted by its signed area. Exact for the polygon
-and independent of vertex sampling. Assumes validated input.
+The area centroid, from \code{\link{polygon_moments}}. Assumes validated
+input.
 }
 \keyword{internal}

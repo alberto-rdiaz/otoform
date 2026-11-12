@@ -36,7 +36,7 @@ Batch: `process_directory(dir, ...)`.
 | 4 | `Conte` | `bw` | `raw`, N x 2 pixel coordinates, counter-clockwise | - |
 | 5 | `resample_arc(raw, grid_size = 4096)` | `raw` | `fine`, 4096 x 2 | (check) |
 | 6 | `smoothout(fine, k = 128)` | `fine` | `smooth`, 4096 x 2 | (check) |
-| 7 | `rotation(smooth)` | `smooth` | `rotated`, centred on the vertex mean, major axis on x | `theta`, `status` (check others) |
+| 7 | `rotation(smooth)` | `smooth` | `rotated`, centred on the vertex mean, major axis on x | `theta`, `center`, `anisotropy`, `status` |
 | 8 | `anchor_rostrum(rotated, n_points = 512)` | `rotated` | `points`, 512 x 2 in pixels, rostrum at index 1 | `status`, `s_star`, `delta`, `perimeter` |
 | 9 | `normalize_area(points)` | `points` | `norm`, unit area | `perimeter`, `s_star` rescaled; `area` (px^2) added |
 | 10 | `centroid_distance(norm)` | `norm` | `r`, length 512, dimensionless | `centroid` |
@@ -96,6 +96,12 @@ images), `process_contours` (many signatures).
   differ by 0.036-0.077 (unit area), i.e. 30-65 px; the shift is
   shape-dependent (rostrum).
 - **J = 6 for N = 512** (half-turn criterion).
+- **Region-based geometry.** Area for normalisation, area centroid for centring
+  and for `r`, area second moments for the principal axes (internal
+  `polygon_moments()`), so no reference depends on boundary sampling and the
+  same centroid is used by `rotation()` and `centroid_distance()`. `theta` is
+  restricted to (-90, 90]: the 180-degree ambiguity is resolved by the
+  photographic protocol (rostrum to the right) and not checked.
 
 ## Pending (tracked as GitHub issues)
 
@@ -107,8 +113,6 @@ images), `process_contours` (many signatures).
 - `measure_contour(points, cal)`: calibrated area, length, width, perimeter,
   roundness, from `points`.
 - Export of `r` next to the coordinates.
-- `rotation()` uses vertex covariance (perimeter) while the signature uses
-  the area centroid; make both region-based.
 - Descriptor choice (energies vs. coefficients).
 - Cosmetics: `s_star`/`delta` carry a stray name `"x"`; `theta` reported in
   [0, 2*pi).
