@@ -24,6 +24,8 @@
 #'   The default leaves a margin of about five times the discretisation
 #'   effect. Values above 1 are never an error: they measure interior holes in
 #'   the mask and are kept in \code{area_ratio} for quality control.
+#' @param overlay_file Optional path of a PNG with the contour drawn on the
+#'   image, written by \code{\link{write_overlay}}. \code{NULL} writes nothing.
 #'
 #' @return A list with:
 #'   \describe{
@@ -40,6 +42,9 @@
 #'     \item{area}{Area enclosed by \code{points}, in squared pixels, before
 #'       normalisation. \code{NA} on error.}
 #'     \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
+#'     \item{center}{Area centroid of the smoothed contour, in image pixel
+#'       coordinates: the point subtracted by \code{rotation()} and needed to
+#'       map \code{points} back onto the image. \code{NA} on error.}
 #'     \item{status}{The \code{status} attribute of \code{points}, or
 #'       \code{"error"}.}
 #'     \item{msg}{Error message; \code{NA} otherwise.}
@@ -56,13 +61,15 @@
 #'   }
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{binarize}},
-#'   \code{\link{keep_largest}}, \code{\link{Conte}}
+#'   \code{\link{keep_largest}}, \code{\link{Conte}},
+#'   \code{\link{write_overlay}}
 #' @export
 process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
                           k = 128L, grid_size = 4096L, n_points = 512L,
-                          min_area_ratio = 0.95) {
+                          min_area_ratio = 0.95, overlay_file = NULL) {
 
   method <- match.arg(method)
+  img    <- NULL   # stays NULL if readJPEG fails; then nothing can be drawn
 
   res <- tryCatch({
 
@@ -94,6 +101,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          r            = r,
          area         = attr(norm, "area"),
          theta        = attr(rotated, "theta"),
+         center       = attr(rotated, "center"),
          status       = attr(points, "status"),
          msg          = NA_character_,
          threshold    = b$threshold,
@@ -108,6 +116,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          r            = NULL,
          area         = NA_real_,
          theta        = NA_real_,
+         center       = c(NA_real_, NA_real_),
          status       = "error",
          msg          = conditionMessage(e),
          threshold    = NA_integer_,
@@ -116,6 +125,11 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          n_components = NA_integer_,
          area_ratio   = NA_real_)
   })
+
+  # Outside the tryCatch: a failure to write the PNG must not turn a correctly
+  # processed otolith into an error.
+  if (!is.null(overlay_file) && !is.null(img))
+    write_overlay(img, res, overlay_file)
 
   c(list(file = basename(path)),
     res,

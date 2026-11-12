@@ -11,7 +11,8 @@ process_image(
   k = 128L,
   grid_size = 4096L,
   n_points = 512L,
-  min_area_ratio = 0.95
+  min_area_ratio = 0.95,
+  overlay_file = NULL
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ mean a partial or wrong polygon, so the image is reported as an error.
 The default leaves a margin of about five times the discretisation
 effect. Values above 1 are never an error: they measure interior holes in
 the mask and are kept in \code{area_ratio} for quality control.}
+
+\item{overlay_file}{Optional path of a PNG with the contour drawn on the
+image, written by \code{\link{write_overlay}}. \code{NULL} writes nothing.}
 }
 \value{
 A list with:
@@ -54,6 +58,9 @@ of the \code{n_points} vertices, dimensionless. Carries the attribute
 \item{area}{Area enclosed by \code{points}, in squared pixels, before
 normalisation. \code{NA} on error.}
 \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
+\item{center}{Area centroid of the smoothed contour, in image pixel
+coordinates: the point subtracted by \code{rotation()} and needed to
+map \code{points} back onto the image. \code{NA} on error.}
 \item{status}{The \code{status} attribute of \code{points}, or
 \code{"error"}.}
 \item{msg}{Error message; \code{NA} otherwise.}
@@ -79,5 +86,6 @@ image.
 }
 \seealso{
 \code{\link{process_directory}}, \code{\link{binarize}},
-\code{\link{keep_largest}}, \code{\link{Conte}}
+\code{\link{keep_largest}}, \code{\link{Conte}},
+\code{\link{write_overlay}}
 }

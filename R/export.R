@@ -69,3 +69,39 @@ build_log <- function(res) {
                stringsAsFactors = FALSE)
   }))
 }
+
+#' Draw the extracted contour on the source image
+#'
+#' Writes a PNG of the image with the final contour \code{points} mapped back
+#' to image coordinates (red), the raw traced contour (grey), the rostrum
+#' anchor (first vertex of \code{points}, green) and the area centroid (blue).
+#' With \code{status != "ok"} only the image and, if available, \code{raw}
+#' are drawn.
+#'
+#' @param img Image array as returned by \code{jpeg::readJPEG}.
+#' @param res One element of the list returned by
+#'   \code{\link{process_directory}}.
+#' @param out_file Path of the PNG to write.
+#' @param width Width of the PNG in pixels; height follows the image aspect.
+#' @return \code{out_file}, invisibly.
+#' @export
+write_overlay <- function(img, res, out_file, width = 1600L) {
+  h <- dim(img)[1L]
+  w <- dim(img)[2L]
+
+  grDevices::png(out_file, width = width, height = round(width * h / w))
+  on.exit(grDevices::dev.off())
+  graphics::par(mar = c(0, 0, 0, 0))
+  plot(grDevices::as.raster(img))
+
+  if (!is.null(res$raw))
+    graphics::lines(res$raw[, 1L] - 0.5, res$raw[, 2L] + 0.5,
+                    col = "grey70", lwd = 1)
+  if (identical(res$status, "ok")) {
+    p <- to_image(res$points, res$theta, res$center)
+    graphics::points(p[, 1L] - 0.5, p[, 2L] + 0.5, pch = 19, col = "purple", cex = 1)
+    graphics::points(p[1L, 1L] - 0.5, p[1L, 2L] + 0.5, pch = 19, col = "blue", cex = 1) # rostrum
+    graphics::points(res$center[1L] - 0.5, res$center[2L] + 0.5, pch = 19, col = "black", cex = 1) # centroid
+  }
+  invisible(out_file)
+}

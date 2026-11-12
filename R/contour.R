@@ -138,6 +138,22 @@ rotation <- function(xy, tol = 1e-3) {
   out
 }
 
+#' Map a rotated contour back to image coordinates
+#'
+#' Inverse of \code{\link{rotation}}: undoes the rotation by \code{theta} and
+#' adds the centre back, so that \code{points} can be drawn on the source
+#' image. Assumes validated input.
+#' @param xy Numeric matrix, N x 2, in the rotated frame.
+#' @param theta,center The attributes returned by \code{\link{rotation}}.
+#' @return Numeric matrix, N x 2, in image pixel coordinates.
+#' @keywords internal
+to_image <- function(xy, theta, center) {
+  if (is.na(theta)) theta <- 0
+  R <- matrix(c(cos(theta), sin(theta),
+                -sin(theta), cos(theta)), 2L, 2L, byrow = TRUE)
+  sweep(xy %*% R, 2L, center, "+")
+}
+
 #' Resample a contour with the rightmost point anchored at index 1
 #'
 #' Locates the rightmost point of the contour to sub-pixel accuracy by

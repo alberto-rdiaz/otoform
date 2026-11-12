@@ -28,6 +28,8 @@ mean a partial or wrong polygon, so the image is reported as an error.
 The default leaves a margin of about five times the discretisation
 effect. Values above 1 are never an error: they measure interior holes in
 the mask and are kept in \code{area_ratio} for quality control.}
+    \item{\code{overlay_file}}{Optional path of a PNG with the contour drawn on the
+image, written by \code{\link{write_overlay}}. \code{NULL} writes nothing.}
   }}
 }
 \value{
