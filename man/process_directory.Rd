@@ -19,6 +19,15 @@ the quantised scale (the last level of the low class), not on
     \item{\code{k}}{Integer. Smoothing parameter passed to \code{\link{smoothout}}.}
     \item{\code{grid_size}}{Integer. Number of points of the arc-length resampling.}
     \item{\code{n_points}}{Integer. Number of points of the final contour.}
+    \item{\code{min_area_ratio}}{Numeric. Lower bound for the ratio between the area
+of the traced polygon and the pixel count of the component it was traced
+from. On the 10 reference images the ratio lies in 0.9975-1.007: the
+polygon through pixel centres is ~0.25\\% smaller than the pixel count, and
+interior pores push it slightly above 1. A ratio clearly below 1 can only
+mean a partial or wrong polygon, so the image is reported as an error.
+The default leaves a margin of about five times the discretisation
+effect. Values above 1 are never an error: they measure interior holes in
+the mask and are kept in \code{area_ratio} for quality control.}
   }}
 }
 \value{

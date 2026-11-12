@@ -49,7 +49,6 @@ coords_long <- function(res) {
   }))
 }
 
-
 #' Build a processing log
 #'
 #' @param res Output of \code{process_directory}.
