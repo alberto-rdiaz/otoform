@@ -138,34 +138,42 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 
 #' Process every image in a directory
 #'
-#' Applies \code{\link{process_image}} to each JPEG in a folder and writes the
-#' results next to the images, in \code{out_dir}:
+#' Applies \code{\link{process_image}} to each JPEG in a folder, in blocks,
+#' and writes the results next to the images in \code{out_dir}:
 #' \describe{
 #'   \item{\code{log.csv}}{One row per image with the scalar fields of the
-#'     result (status, threshold, area ratio, ...). Appended after each image,
-#'     so an interrupted run keeps what was done.}
+#'     result; appended after each block, so an interrupted run keeps what was
+#'     done.}
 #'   \item{\code{results.rds}}{The full list of results, for R.}
 #'   \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
 #'     the contour drawn on it (\code{\link{write_overlay}}).}
 #' }
-#' Failures are recorded rather than propagated, so one bad image does not
-#' stop the run.
+#' Failures are recorded rather than propagated.
+#'
+#' @details
+#' Runs in parallel if a \pkg{future} plan is set before the call, e.g.
+#' \code{future::plan(future::multisession, workers = 8)}; without a plan it
+#' runs sequentially. The package never sets the plan. Workers need the
+#' package installed (\code{devtools::install()}), not merely loaded with
+#' \code{load_all()}.
 #'
 #' @param dir Path to the folder containing the images.
 #' @param out_dir Where to write the outputs. Defaults to a folder
 #'   \code{otoform} inside \code{dir}, so each locality keeps its own results.
-#' @param overlay Logical. Write the overlay PNGs?
+#' @param overlay Logical. Write the overlay PNGs? Costs about 2 s per image;
+#'   keep it off for bulk runs and draw flagged images afterwards.
+#' @param chunk_size Integer. Images per block; the log is appended and
+#'   progress reported after each block.
 #' @inheritDotParams process_image -path -overlay_file
 #'
-#' @return A list of results, one per image, named by file (invisibly: the
-#'   same list is in \code{results.rds}).
+#' @return The list of results, one per image, named by file, invisibly
+#'   (the same list is in \code{results.rds}).
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
-                              overlay = FALSE, ...) {
+                              overlay = FALSE, chunk_size = 50L, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
-
   files <- list.files(dir, pattern = "\\.jpe?g$", full.names = TRUE,
                       ignore.case = TRUE)
   if (length(files) == 0L)
@@ -176,22 +184,27 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
     dir.create(file.path(out_dir, "overlay"), showWarnings = FALSE)
   log_file <- file.path(out_dir, "log.csv")
 
-  out <- vector("list", length(files))
+  dots   <- list(...)
+  chunks <- split(seq_along(files), ceiling(seq_along(files) / chunk_size))
+  out    <- vector("list", length(files))
   names(out) <- basename(files)
+  done <- 0L
 
-  for (i in seq_along(files)) {
-    message(sprintf("[%d/%d] %s", i, length(files), basename(files[i])))
+  for (ch in chunks) {
+    res <- future.apply::future_lapply(files[ch], function(f) {
+      ov <- if (overlay)
+        file.path(out_dir, "overlay",
+                  sub("\\.jpe?g$", ".png", basename(f), ignore.case = TRUE))
+      else NULL
+      do.call(process_image, c(list(f), dots, list(overlay_file = ov)))
+    })
+    out[ch] <- res
 
-    overlay_file <- if (overlay)
-      file.path(out_dir, "overlay",
-                sub("\\.jpe?g$", ".png", basename(files[i]), ignore.case = TRUE))
-    else NULL
-
-    out[[i]] <- process_image(files[i], ..., overlay_file = overlay_file)
-
-    utils::write.table(log_row(out[[i]]), log_file, sep = ",",
-                       row.names = FALSE, col.names = i == 1L,
-                       append = i > 1L)
+    utils::write.table(do.call(rbind, lapply(res, log_row)), log_file,
+                       sep = ",", row.names = FALSE,
+                       col.names = done == 0L, append = done > 0L)
+    done <- done + length(ch)
+    message(sprintf("[%d/%d] %s", done, length(files), basename(dir)))
   }
 
   saveRDS(out, file.path(out_dir, "results.rds"))

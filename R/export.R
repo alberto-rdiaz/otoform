@@ -96,68 +96,6 @@ log_row <- function(res) {
              stringsAsFactors = FALSE)
 }
 
-#' Process every image in a directory
-#'
-#' Applies \code{\link{process_image}} to each JPEG in a folder and writes the
-#' results next to the images, in \code{out_dir}:
-#' \describe{
-#'   \item{\code{log.csv}}{One row per image with the scalar fields of the
-#'     result (status, threshold, area ratio, ...). Appended after each image,
-#'     so an interrupted run keeps what was done.}
-#'   \item{\code{results.rds}}{The full list of results, for R.}
-#'   \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
-#'     the contour drawn on it (\code{\link{write_overlay}}).}
-#' }
-#' Failures are recorded rather than propagated, so one bad image does not
-#' stop the run.
-#'
-#' @param dir Path to the folder containing the images.
-#' @param out_dir Where to write the outputs. Defaults to a folder
-#'   \code{otoform} inside \code{dir}, so each locality keeps its own results.
-#' @param overlay Logical. Write the overlay PNGs?
-#' @inheritDotParams process_image -path -overlay_file
-#'
-#' @return A list of results, one per image, named by file (invisibly: the
-#'   same list is in \code{results.rds}).
-#' @export
-process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
-                              overlay = FALSE, ...) {
-
-  if (!dir.exists(dir))
-    stop("process_directory(): directory not found: ", dir, call. = FALSE)
-
-  files <- list.files(dir, pattern = "\\.jpe?g$", full.names = TRUE,
-                      ignore.case = TRUE)
-  if (length(files) == 0L)
-    stop("process_directory(): no JPEG files found in ", dir, call. = FALSE)
-
-  dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-  if (overlay)
-    dir.create(file.path(out_dir, "overlay"), showWarnings = FALSE)
-  log_file <- file.path(out_dir, "log.csv")
-
-  out <- vector("list", length(files))
-  names(out) <- basename(files)
-
-  for (i in seq_along(files)) {
-    message(sprintf("[%d/%d] %s", i, length(files), basename(files[i])))
-
-    overlay_file <- if (overlay)
-      file.path(out_dir, "overlay",
-                sub("\\.jpe?g$", ".png", basename(files[i]), ignore.case = TRUE))
-    else NULL
-
-    out[[i]] <- process_image(files[i], ..., overlay_file = overlay_file)
-
-    utils::write.table(log_row(out[[i]]), log_file, sep = ",",
-                       row.names = FALSE, col.names = i == 1L,
-                       append = i > 1L)
-  }
-
-  saveRDS(out, file.path(out_dir, "results.rds"))
-  invisible(out)
-}
-
 #' Draw the extracted contour on the source image
 #'
 #' Writes a PNG of the image with the final contour \code{points} mapped back

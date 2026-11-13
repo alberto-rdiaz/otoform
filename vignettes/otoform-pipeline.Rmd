@@ -117,6 +117,23 @@ images), `process_contours` (many signatures).
   same centroid is used by `rotation()` and `centroid_distance()`. `theta` is
   restricted to (-90, 90]: the 180-degree ambiguity is resolved by the
   photographic protocol (rostrum to the right) and not checked.
+- **Batch processing in blocks, parallel on demand.** `process_directory()`
+  processes images in blocks of `chunk_size` with `future.apply::future_lapply()`
+  and appends the log after each block. The user sets the plan
+  (`future::plan(future::multisession, workers = 4)`); the package never does.
+  Measured on 9.2 Mpx images (2383 x 3840): 4.0 s/image sequential
+  (to_gray 0.7, binarize 1.0, keep_largest 2.1, Conte 0.3; everything after
+  Conte 0.05); 0.64 s/image effective with 4 workers (200 images in 128 s);
+  8 workers give no further gain (memory-bound). Parallel and sequential runs
+  produce identical logs. The overlay adds 2.3 s/image and stays off for bulk
+  runs; flagged images are drawn afterwards with `write_overlay()`.
+- **Visual QC on a 200-image sample** (one locality): 200/200 traced,
+  `area_ratio` 0.998-1.089, Otsu thresholds 92-111, `theta` -8 to -2 degrees.
+  The images with wrong contours (translucent otoliths, dirt, lighting) were
+  those flagged by the extremes of `area_ratio` and `n_components`: the log
+  does not decide, it ranks images for visual inspection. Such images are
+  excluded and documented, not fixed in code; the remedy is the photographic
+  protocol.
 
 ## Pending (tracked as GitHub issues)
 
@@ -133,3 +150,8 @@ images), `process_contours` (many signatures).
   [0, 2*pi).
 - Tests: exact reconstruction of `atrous_b3`; `normalize_area`;
   `polygon_centroid` on triangle and square.
+- `keep_largest()` takes 2.1 of 4.0 s per 9 Mpx image: label a downsampled
+  mask first, then crop and label at full resolution inside the bounding box.
+- `to_gray()` and `binarize()` make redundant full-image passes (~0.5 s).
+- A `qc.csv` next to `log.csv` with the human verdict per image, to measure
+  whether rules on `area_ratio` / `n_components` predict wrong contours.
