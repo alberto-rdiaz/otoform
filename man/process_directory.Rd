@@ -9,7 +9,7 @@ process_directory(
   out_dir = file.path(dir, "otoform"),
   overlay = FALSE,
   chunk_size = 50L,
-  J = 6L,
+  J = NULL,
   ...
 )
 }
@@ -24,6 +24,10 @@ keep it off for bulk runs and draw flagged images afterwards.}
 
 \item{chunk_size}{Integer. Images per block; the log is appended and
 progress reported after each block.}
+
+\item{J}{Integer. Number of wavelet levels, passed to
+\code{\link{process_contours}}. \code{NULL} (default) applies the
+half-turn criterion, \code{\link{max_levels}}.}
 
 \item{...}{
   Arguments passed on to \code{\link[=process_image]{process_image}}
@@ -59,7 +63,7 @@ result; appended after each block, so an interrupted run keeps what was
 done.}
 \item{\code{results.rds}}{The full list of results, for R.}
 \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
-the contour drawn on it (\code{\link{write_overlay}}).}
+the contour drawn on it (\code{\link{export_overlay}}).}
 }
 Failures are recorded rather than propagated.
 }

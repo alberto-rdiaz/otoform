@@ -40,7 +40,7 @@ effect. Values above 1 are never an error: they measure interior holes in
 the mask and are kept in \code{area_ratio} for quality control.}
 
 \item{overlay_file}{Optional path of a PNG with the contour drawn on the
-image, written by \code{\link{write_overlay}}. \code{NULL} writes nothing.}
+image, written by \code{\link{export_overlay}}. \code{NULL} writes nothing.}
 }
 \value{
 A list with:

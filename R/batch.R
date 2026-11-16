@@ -25,7 +25,7 @@
 #'   effect. Values above 1 are never an error: they measure interior holes in
 #'   the mask and are kept in \code{area_ratio} for quality control.
 #' @param overlay_file Optional path of a PNG with the contour drawn on the
-#'   image, written by \code{\link{write_overlay}}. \code{NULL} writes nothing.
+#'   image, written by \code{\link{export_overlay}}. \code{NULL} writes nothing.
 #'
 #' @return A list with:
 #'   \describe{
@@ -146,7 +146,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #'     done.}
 #'   \item{\code{results.rds}}{The full list of results, for R.}
 #'   \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
-#'     the contour drawn on it (\code{\link{write_overlay}}).}
+#'     the contour drawn on it (\code{\link{export_overlay}}).}
 #' }
 #' Failures are recorded rather than propagated.
 #'
@@ -164,13 +164,16 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #'   keep it off for bulk runs and draw flagged images afterwards.
 #' @param chunk_size Integer. Images per block; the log is appended and
 #'   progress reported after each block.
+#' @param J Integer. Number of wavelet levels, passed to
+#'   \code{\link{process_contours}}. \code{NULL} (default) applies the
+#'   half-turn criterion, \code{\link{max_levels}}.
 #' @inheritDotParams process_image -path -overlay_file
 #'
 #' @return The list of results, one per image, named by file, invisibly
 #'   (the same list is in \code{results.rds}).
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
-                              overlay = FALSE, chunk_size = 50L, J = 6L, ...) {
+                              overlay = FALSE, chunk_size = 50L, J = NULL, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
@@ -245,7 +248,7 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{atrous_b3}}
 #' @export
-process_contours <- function(res, J = 6L) {
+process_contours <- function(res, J = NULL) {
 
   if (!is.list(res) || length(res) == 0L)
     stop("process_contours(): 'res' must be a non-empty list, as returned ",

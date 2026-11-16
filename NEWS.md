@@ -36,3 +36,9 @@
   (`export_log`, `export_contours`, `export_signatures`, `export_wavelets`,
   `export_overlay`); `coords_long()`, `write_results()`, `build_log()` and
   `write_overlay()` removed.
+* `J` is no longer a hard-coded default. New `max_levels(n)` applies the
+  half-turn criterion (`2^(J+2) - 3 <= n/2`; 6 for n = 512, 7 for 1024);
+  `atrous_b3()`, `process_contours()` and `process_directory()` take
+  `J = NULL` to use it, and explicit values above the full-contour bound are
+  rejected. `atrous_b3()` now rejects coordinate matrices and is vectorised:
+  identical output, about 8x faster.

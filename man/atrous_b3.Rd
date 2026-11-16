@@ -2,22 +2,28 @@
 % Please edit documentation in R/atrous.R
 \name{atrous_b3}
 \alias{atrous_b3}
-\title{À trous wavelet decomposition with B3-spline kernel}
+\title{A trous wavelet decomposition with the B3-spline kernel}
 \usage{
-atrous_b3(x, J = 7, allow_unsafe = FALSE)
+atrous_b3(x, J = NULL)
 }
 \arguments{
-\item{x}{Numeric vector. The signal to decompose.}
+\item{x}{Numeric vector: the centroid-distance signature \code{r},
+periodic. A coordinate matrix is rejected.}
 
-\item{J}{Integer. Number of decomposition levels. Safe maximum is J = 7
-for N = 512. Higher values trigger an error unless allow_unsafe = TRUE.}
-
-\item{allow_unsafe}{Logical. If FALSE (default), aborts when J is large
-enough to cause aliasing. Set TRUE to compute unsafe levels deliberately.}
+\item{J}{Integer. Number of levels. \code{NULL} (default) applies the
+half-turn criterion, \code{\link{max_levels}}; explicit values above the
+full-contour bound are rejected.}
 }
 \value{
-A list with elements c (approximations) and w (detail planes).
+A list with \code{c}, the \code{J + 1} approximations
+(\code{c[[1]]} is \code{x}), and \code{w}, the \code{J} details,
+\code{w[[j]] = c[[j]] - c[[j + 1]]}, so that
+\code{x = c[[J + 1]] + sum(w)} exactly.
 }
 \description{
-À trous wavelet decomposition with B3-spline kernel
+Non-decimated (stationary) decomposition of a periodic signal. Each level
+smooths the previous approximation with the B3 kernel (1, 4, 6, 4, 1)/16
+dilated by 2^(j-1) (the "holes"), with periodic boundary; the detail is
+the difference between consecutive approximations. Shift invariant and
+zero phase, which is why it suits closed contours.
 }

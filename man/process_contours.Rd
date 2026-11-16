@@ -4,7 +4,7 @@
 \alias{process_contours}
 \title{Wavelet-decompose every signature in a collection}
 \usage{
-process_contours(res, J = 6L)
+process_contours(res, J = NULL)
 }
 \arguments{
 \item{res}{List returned by \code{\link{process_directory}}: one element
