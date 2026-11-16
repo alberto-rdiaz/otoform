@@ -110,6 +110,14 @@ images), `process_contours` (many signatures).
 
 ## Decisions and their justification
 
+- **Smoothing: `k = 32`.** `smoothout()` applies k passes of (1/4, 1/2, 1/4)
+  on the 4096-point grid; the result is Gaussian with sigma = sqrt(k/2) grid
+  points. With k = 32, sigma = 4 = half the step between final samples
+  (4096/512 = 8): the anti-aliasing filter before resampling. Measured on the
+  reference images against the previous k = 128: no aliasing (finest-level
+  energy +45%, scale pyramid intact), maximum deviation from the raw contour
+  at the rostrum 5.4 to 4.1 px. Kept fixed rather than derived; if
+  `grid_size` or `n_points` change, set k = (grid_size/n_points)^2 / 2 by hand.
 - **Otsu by default.** On the 10 reference images Otsu picks 63-88 (0.25-0.35
   in [0, 1]) with separability 0.93-0.96. A fixed cut at 0.5 (`threshold =
   127`) was ~50% above the optimum and produced holes and 5/10 wrong contours.

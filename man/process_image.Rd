@@ -8,7 +8,7 @@ process_image(
   path,
   method = c("otsu", "fixed"),
   threshold = NULL,
-  k = 128L,
+  k = 32L,
   grid_size = 4096L,
   n_points = 512L,
   min_area_ratio = 0.95,
@@ -23,7 +23,12 @@ process_image(
 the quantised scale (the last level of the low class), not on
 \code{[0, 1]}, and must be \code{NULL} when \code{method = "otsu"}.}
 
-\item{k}{Integer. Smoothing parameter passed to \code{\link{smoothout}}.}
+\item{k}{Integer. Smoothing passes of \code{\link{smoothout}} on the
+\code{grid_size} grid; k passes of (1/4, 1/2, 1/4) give a Gaussian of
+sigma = sqrt(k/2) grid points. The default, 32, is the anti-aliasing
+filter at half a final sampling step for grid_size = 4096 and
+n_points = 512 (k = (grid_size/n_points)^2 / 2). It is not derived
+automatically: change it by hand if you change either grid.}
 
 \item{grid_size}{Integer. Number of points of the arc-length resampling.}
 

@@ -36,7 +36,12 @@ half-turn criterion, \code{\link{max_levels}}.}
 \code{\link{binarize}}, which validates them. \code{threshold} is given on
 the quantised scale (the last level of the low class), not on
 \code{[0, 1]}, and must be \code{NULL} when \code{method = "otsu"}.}
-    \item{\code{k}}{Integer. Smoothing parameter passed to \code{\link{smoothout}}.}
+    \item{\code{k}}{Integer. Smoothing passes of \code{\link{smoothout}} on the
+\code{grid_size} grid; k passes of (1/4, 1/2, 1/4) give a Gaussian of
+sigma = sqrt(k/2) grid points. The default, 32, is the anti-aliasing
+filter at half a final sampling step for grid_size = 4096 and
+n_points = 512 (k = (grid_size/n_points)^2 / 2). It is not derived
+automatically: change it by hand if you change either grid.}
     \item{\code{grid_size}}{Integer. Number of points of the arc-length resampling.}
     \item{\code{n_points}}{Integer. Number of points of the final contour.}
     \item{\code{min_area_ratio}}{Numeric. Lower bound for the ratio between the area
