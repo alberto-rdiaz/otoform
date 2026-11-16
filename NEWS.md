@@ -30,3 +30,9 @@
 * `process_directory()` writes `log.csv`, `results.rds` and optional overlays
   to `out_dir` (default `dir/otoform`), in blocks via `future.apply`; parallel
   when the user sets a future plan.
+* `process_directory()` now runs both stages (`J` argument) and writes
+  `contours.csv`, `signature.csv` and one `wavelet_*.csv` per level, plus
+  `results.rds` and `wavelets.rds`. Export functions renamed `export_*`
+  (`export_log`, `export_contours`, `export_signatures`, `export_wavelets`,
+  `export_overlay`); `coords_long()`, `write_results()`, `build_log()` and
+  `write_overlay()` removed.

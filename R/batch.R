@@ -62,7 +62,7 @@
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{binarize}},
 #'   \code{\link{keep_largest}}, \code{\link{Conte}},
-#'   \code{\link{write_overlay}}
+#'   \code{\link{export_overlay}}
 #' @export
 process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
                           k = 128L, grid_size = 4096L, n_points = 512L,
@@ -129,7 +129,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
   # Outside the tryCatch: a failure to write the PNG must not turn a correctly
   # processed otolith into an error.
   if (!is.null(overlay_file) && !is.null(img))
-    write_overlay(img, res, overlay_file)
+    export_overlay(img, res, overlay_file)
 
   c(list(file = basename(path)),
     res,
@@ -170,7 +170,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #'   (the same list is in \code{results.rds}).
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
-                              overlay = FALSE, chunk_size = 50L, ...) {
+                              overlay = FALSE, chunk_size = 50L, J = 6L, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
@@ -207,7 +207,12 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
     message(sprintf("[%d/%d] %s", done, length(files), basename(dir)))
   }
 
+  dec <- process_contours(out, J = J)
+  export_contours(out, file.path(out_dir, "contours.csv"))
+  export_signatures(out, file.path(out_dir, "signature.csv"))
+  export_wavelets(dec, out_dir)
   saveRDS(out, file.path(out_dir, "results.rds"))
+  saveRDS(dec, file.path(out_dir, "wavelets.rds"))
   invisible(out)
 }
 

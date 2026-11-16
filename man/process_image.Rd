@@ -87,5 +87,5 @@ image.
 \seealso{
 \code{\link{process_directory}}, \code{\link{binarize}},
 \code{\link{keep_largest}}, \code{\link{Conte}},
-\code{\link{write_overlay}}
+\code{\link{export_overlay}}
 }

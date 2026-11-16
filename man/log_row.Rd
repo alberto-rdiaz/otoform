@@ -11,11 +11,9 @@ log_row(res)
 \code{\link{process_directory}}.}
 }
 \value{
-A one-row data frame.
+A one-row data frame with the scalar fields.
 }
 \description{
-Keeps the scalar fields of a result (everything but \code{raw},
-\code{points} and \code{r}) as a one-row data frame, ready to be appended
-to a CSV or bound into a log.
+One log row from a process_image() result
 }
 \keyword{internal}

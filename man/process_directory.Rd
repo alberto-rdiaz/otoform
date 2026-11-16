@@ -9,6 +9,7 @@ process_directory(
   out_dir = file.path(dir, "otoform"),
   overlay = FALSE,
   chunk_size = 50L,
+  J = 6L,
   ...
 )
 }

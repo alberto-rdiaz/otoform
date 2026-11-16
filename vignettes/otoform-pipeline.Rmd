@@ -49,20 +49,32 @@ branch returns the same names with `NULL`/`NA`.
 plotted, and what measurements will be computed from. `r` is the input of
 stage 2. Attributes are provenance, never a data source.
 
-### Outputs of `process_directory()`
+### What the user calls, and what comes out
 
-`process_directory(dir, out_dir = file.path(dir, "otoform"), overlay = FALSE, ...)`
-processes every JPEG in `dir` and writes, in `out_dir` (one per locality
-folder, next to the images):
+User-facing API: `process_directory()`. Everything else is internal or
+documented for method comparison.
 
-| File | Content | When written |
-|---|---|---|
-| `log.csv` | one row per image with the scalar fields of the result: `file`, `status`, `msg`, `method`, `threshold`, `separability`, `inverted`, `n_components`, `area_ratio`, `area`, `theta`, `k` (internal `log_row()`) | appended after each image, so an interrupted run keeps what was done |
-| `results.rds` | the full list of results (`raw`, `points`, `r`, attributes), for R | at the end |
-| `overlay/<file>.png` | the image with `points` mapped back to image coordinates (red dots), `raw` (grey line), the rostrum anchor (`points[1, ]`, green) and the area centroid (black); `write_overlay()`, via `overlay_file` in `process_image()` | per image, only with `overlay = TRUE` |
+`process_directory(dir, out_dir = file.path(dir, "otoform"), overlay = FALSE,
+chunk_size = 50, J = 6, ...)` processes every JPEG in `dir` (stage 1, in
+blocks, parallel if a `future` plan is set), decomposes every signature
+(stage 2) and writes, in `out_dir`, one folder per locality next to the
+images:
 
-The source images are never modified or copied. `list.files()` is not
-recursive, so `out_dir` inside `dir` is not scanned for images.
+| File | Content |
+|---|---|
+| `log.csv` | one row per image, successful or not: `status`, `msg`, binarisation settings, `n_components`, `area_ratio`, `area`, `theta`; appended after each block |
+| `contours.csv` | long, one row per vertex: `file`, `i` (rostrum at 1), `x`, `y`. **Aligned** contour: pixel units, centred on the area centroid, major axis on x; not the position in the image (`theta`, `center` in the log and `to_image()` map it back). 4 decimals |
+| `signature.csv` | wide, one row per otolith: `r_001 ... r_512`, dimensionless, full precision |
+| `wavelet_c6.csv` | wide: coarse approximation `c6_001 ... c6_512` |
+| `wavelet_w1.csv` ... `wavelet_w6.csv` | wide: details `wj_001 ... wj_512`, one file per level; `signature = c6 + w1 + ... + w6` exactly |
+| `results.rds`, `wavelets.rds` | the full R lists of both stages |
+| `overlay/<file>.png` | only with `overlay = TRUE`: image with `points` (red dots), `raw` (grey), rostrum (green) and centroid (black); `export_overlay()` |
+
+All CSV files: comma-separated, point decimal, UTF-8, header row
+(`write.csv`). Open them in Excel through *Data → From Text/CSV* with an
+English locale, or the point decimal is mangled. Wide files share the `file`
+column, so levels are combined with a `merge` by `file`; `log.csv` says which
+rows to exclude. The source images are never modified or copied.
 
 ## Stage 2: signature to wavelet decomposition
 
@@ -134,6 +146,12 @@ images), `process_contours` (many signatures).
   does not decide, it ranks images for visual inspection. Such images are
   excluded and documented, not fixed in code; the remedy is the photographic
   protocol.
+  - **Deliverables as plain text.** CSV over xlsx (binary, 1 048 576-row limit,
+  locale-dependent) and over "txt" (no defined separator). Coordinates rounded
+  to 4 decimals (sub-pixel anchoring is good to ~0.01 px); signatures and
+  coefficients at full precision. One file per wavelet level, so a single
+  level is a single read. Verified: the signature read from `signature.csv`
+  equals the sum of the seven level files read from disk (1e-15).
 
 ## Pending (tracked as GitHub issues)
 

@@ -325,22 +325,3 @@ centroid_distance <- function(xy) {
   attr(r, "centroid") <- cen
   r
 }
-
-#' Rotate a contour so that its rightmost point comes first
-#'
-#' Cyclically shifts a closed contour so that the point with the maximum x
-#' coordinate becomes the first element. Assumes the otolith is oriented
-#' with the rostrum pointing right.
-#'
-#' @param out A list with elements X and Y, the contour coordinates.
-#'
-#' @return A list with elements x and y, cyclically shifted.
-#' @export
-#'
-coordsSort <- function(out) {
-  k <- which.max(out[[1]])
-  n <- length(out[[1]])
-  i <- c(k:n, seq_len(k - 1L))
-  list(x = out[[1]][i],
-       y = out[[2]][i])
-}
