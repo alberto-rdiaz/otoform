@@ -10,6 +10,7 @@ process_directory(
   overlay = FALSE,
   chunk_size = 50L,
   J = NULL,
+  cal = NULL,
   ...
 )
 }
@@ -27,7 +28,9 @@ progress reported after each block.}
 
 \item{J}{Integer. Number of wavelet levels, passed to
 \code{\link{process_contours}}. \code{NULL} (default) applies the
-half-turn criterion, \code{\link{max_levels}}.}
+half-turn criterion, \code{\link{max_levels}}.
+@param cal Pixels per millimetre for the whole folder, or NULL for pixel
+units; see export_measurements.}
 
 \item{...}{
   Arguments passed on to \code{\link[=process_image]{process_image}}
@@ -66,7 +69,18 @@ and writes the results next to the images in \code{out_dir}:
 \item{\code{log.csv}}{One row per image with the scalar fields of the
 result; appended after each block, so an interrupted run keeps what was
 done.}
-\item{\code{results.rds}}{The full list of results, for R.}
+\item{\code{contours.csv}}{Aligned contours, one row per vertex
+(\code{\link{export_contours}}).}
+\item{\code{signature.csv}}{Centroid-distance signatures, one row per
+otolith (\code{\link{export_signatures}}).}
+\item{\code{wavelet_cJ.csv}, \code{wavelet_w1.csv} ... \code{wavelet_wJ.csv}}{
+Wavelet decomposition, one file per level
+(\code{\link{export_wavelets}}).}
+\item{\code{measurements.csv}}{Shape measurements per otolith
+(\code{\link{measure_contour}}), in pixels or, with \code{cal}, in
+millimetres.}
+\item{\code{results.rds}, \code{wavelets.rds}}{The full R lists of both
+stages.}
 \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
 the contour drawn on it (\code{\link{export_overlay}}).}
 }

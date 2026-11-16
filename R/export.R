@@ -166,3 +166,27 @@ export_overlay <- function(img, res, file, width = 1600L) {
   }
   invisible(file)
 }
+
+#' Export the shape measurements of a collection
+#'
+#' One row per otolith with \code{status == "ok"}: \code{file}, \code{unit}
+#' and the descriptors of \code{\link{measure_contour}}.
+#'
+#' @inheritParams export_contours
+#' @param cal Pixels per millimetre for the whole folder (one calibration per
+#'   photographic session), or \code{NULL} for pixel units.
+#' @return The table, invisibly; \code{NULL} if no image succeeded.
+#' @export
+export_measurements <- function(res, file, cal = NULL) {
+  ok <- ok_only(res)
+  if (length(ok) == 0L) {
+    message("export_measurements(): no successful image; nothing written.")
+    return(invisible(NULL))
+  }
+  m   <- t(vapply(ok, function(z) measure_contour(z$points, cal), numeric(7L)))
+  tab <- data.frame(file = vapply(ok, `[[`, character(1L), "file"),
+                    unit = if (is.null(cal)) "px" else "mm",
+                    m, stringsAsFactors = FALSE)
+  utils::write.csv(tab, file, row.names = FALSE)
+  invisible(tab)
+}

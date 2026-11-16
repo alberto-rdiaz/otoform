@@ -145,11 +145,22 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #'
 #' Applies \code{\link{process_image}} to each JPEG in a folder, in blocks,
 #' and writes the results next to the images in \code{out_dir}:
-#' \describe{
+##' \describe{
 #'   \item{\code{log.csv}}{One row per image with the scalar fields of the
 #'     result; appended after each block, so an interrupted run keeps what was
 #'     done.}
-#'   \item{\code{results.rds}}{The full list of results, for R.}
+#'   \item{\code{contours.csv}}{Aligned contours, one row per vertex
+#'     (\code{\link{export_contours}}).}
+#'   \item{\code{signature.csv}}{Centroid-distance signatures, one row per
+#'     otolith (\code{\link{export_signatures}}).}
+#'   \item{\code{wavelet_cJ.csv}, \code{wavelet_w1.csv} ... \code{wavelet_wJ.csv}}{
+#'     Wavelet decomposition, one file per level
+#'     (\code{\link{export_wavelets}}).}
+#'   \item{\code{measurements.csv}}{Shape measurements per otolith
+#'     (\code{\link{measure_contour}}), in pixels or, with \code{cal}, in
+#'     millimetres.}
+#'   \item{\code{results.rds}, \code{wavelets.rds}}{The full R lists of both
+#'     stages.}
 #'   \item{\code{overlay/}}{With \code{overlay = TRUE}, one PNG per image with
 #'     the contour drawn on it (\code{\link{export_overlay}}).}
 #' }
@@ -172,13 +183,16 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #' @param J Integer. Number of wavelet levels, passed to
 #'   \code{\link{process_contours}}. \code{NULL} (default) applies the
 #'   half-turn criterion, \code{\link{max_levels}}.
+#'   @param cal Pixels per millimetre for the whole folder, or NULL for pixel
+#'   units; see export_measurements.
 #' @inheritDotParams process_image -path -overlay_file
 #'
 #' @return The list of results, one per image, named by file, invisibly
 #'   (the same list is in \code{results.rds}).
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
-                              overlay = FALSE, chunk_size = 50L, J = NULL, ...) {
+                              overlay = FALSE, chunk_size = 50L,
+                              J = NULL, cal = NULL, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
@@ -219,6 +233,7 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
   export_contours(out, file.path(out_dir, "contours.csv"))
   export_signatures(out, file.path(out_dir, "signature.csv"))
   export_wavelets(dec, out_dir)
+  export_measurements(out, file.path(out_dir, "measurements.csv"), cal)
   saveRDS(out, file.path(out_dir, "results.rds"))
   saveRDS(dec, file.path(out_dir, "wavelets.rds"))
   invisible(out)

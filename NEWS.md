@@ -42,3 +42,10 @@
   `J = NULL` to use it, and explicit values above the full-contour bound are
   rejected. `atrous_b3()` now rejects coordinate matrices and is vectorised:
   identical output, about 8x faster.
+  * New `measure_contour()` and `export_measurements()`: area, perimeter,
+  length and width along the principal axes, roundness, aspect and
+  rectangularity from the aligned contour, in pixels or, with `cal` (px/mm),
+  in millimetres. `process_directory()` writes `measurements.csv`.
+* Sampling decisions fixed and documented: `n_points = 512` (set by the
+  lowest-resolution images; finer levels are below the pixel-noise floor),
+  `k = 32` (anti-aliasing at half a sampling step), `J = max_levels(N)`.

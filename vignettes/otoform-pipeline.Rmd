@@ -67,6 +67,7 @@ images:
 | `signature.csv` | wide, one row per otolith: `r_001 ... r_512`, dimensionless, full precision |
 | `wavelet_c6.csv` | wide: coarse approximation `c6_001 ... c6_512` |
 | `wavelet_w1.csv` ... `wavelet_w6.csv` | wide: details `wj_001 ... wj_512`, one file per level; `signature = c6 + w1 + ... + w6` exactly |
+| `measurements.csv` | one row per otolith: `area`, `perimeter`, `length`, `width` (extents along the principal axes), `roundness` (4πA/P²), `aspect`, `rectangularity`; pixels, or millimetres with `cal` (px/mm, one per folder). Computed from the coordinates, never from attributes |
 | `results.rds`, `wavelets.rds` | the full R lists of both stages |
 | `overlay/<file>.png` | only with `overlay = TRUE`: image with `points` (red dots), `raw` (grey), rostrum (green) and centroid (black); `export_overlay()` |
 
@@ -166,6 +167,20 @@ images), `process_contours` (many signatures).
   coefficients at full precision. One file per wavelet level, so a single
   level is a single read. Verified: the signature read from `signature.csv`
   equals the sum of the seven level files read from disk (1e-15).
+  - **Number of points: `n_points = 512`.** The decomposition is consistent
+  across N: level j at 1024 carries the same energy as level j-1 at 512 and
+  level j+1 at 256 (within 0.2% at coarse scales, 10-17% at the finest),
+  so N only sets where the fine end is cut. At 512 on the 1.8 Mpx reference
+  images the per-level RMS amplitudes are w1 0.35 px, w2 1 px, w3 2.4 px,
+  w4 5.6 px, w5 13 px, w6 30 px: the finest level is already below what a
+  pixel contour can measure (±0.5 px), 1024 would add two noise levels and
+  256 would drop a marginal one. N must be the same for the whole
+  collection and is therefore set by its lowest resolution; finer detail in
+  higher-resolution localities is not comparable and is not used. Dyadic,
+  for comparison with Fourier.
+- **Measurements** are classical descriptors for comparison with the
+  literature and as size covariates (allometry); they are not the shape
+  descriptors of the method.
 
 ## Pending (tracked as GitHub issues)
 
@@ -174,8 +189,9 @@ images), `process_contours` (many signatures).
   `Conte`. shapeR solves the same failure with a manual `mouse.click`.
 - Area invariant (polygon area vs. mask area) in `process_image()`, so that
   `status` detects the case above.
-- `measure_contour(points, cal)`: calibrated area, length, width, perimeter,
-  roundness, from `points`.
+- Adaptive grid_size (next power of two >= 2 * n_raw) and smoothout() as a 
+  single Gaussian pass with sigma = grid_size / (2 * n_points); today 4096 < n_raw 
+  on 9 Mpx images, which downsamples before smoothing.
 - Export of `r` next to the coordinates.
 - Descriptor choice (energies vs. coefficients).
 - Cosmetics: `s_star`/`delta` carry a stray name `"x"`; `theta` reported in
