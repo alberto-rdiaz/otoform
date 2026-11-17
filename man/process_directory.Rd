@@ -10,7 +10,6 @@ process_directory(
   overlay = FALSE,
   chunk_size = 50L,
   J = NULL,
-  cal = NULL,
   ...
 )
 }

@@ -181,6 +181,13 @@ images), `process_contours` (many signatures).
 - **Measurements** are classical descriptors for comparison with the
   literature and as size covariates (allometry); they are not the shape
   descriptors of the method.
+- **Resolution.** All images of a study must share the same pixels per
+  millimetre (camera, sensor and magnification); the log records `width`
+  and `height` so this can be verified. Sensitivity measured on 20 images
+  processed at native and at half resolution (block-averaged): systematic
+  change in level energies <= 1.5%, random per-image change 3-11% (largest
+  at w1), against 11-24% between otoliths. No rescaling is implemented;
+  a study mixing cameras must equalise px/mm beforehand.
 
 ## Pending (tracked as GitHub issues)
 

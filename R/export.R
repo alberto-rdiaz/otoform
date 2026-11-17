@@ -24,8 +24,8 @@ log_row <- function(res) {
              method = res$method, threshold = res$threshold,
              separability = res$separability, inverted = res$inverted,
              n_components = res$n_components, area_ratio = res$area_ratio,
-             area = res$area, theta = res$theta, k = res$k,
-             stringsAsFactors = FALSE)
+             area = res$area, theta = res$theta, k = res$k, width = res$width,
+             height = res$height, stringsAsFactors = FALSE)
 }
 
 # ---- export_* ---------------------------------------------------------------

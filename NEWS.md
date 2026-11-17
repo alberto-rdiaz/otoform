@@ -49,3 +49,5 @@
 * Sampling decisions fixed and documented: `n_points = 512` (set by the
   lowest-resolution images; finer levels are below the pixel-noise floor),
   `k = 32` (anti-aliasing at half a sampling step), `J = max_levels(N)`.
+* process_image() records width and height of the processed image in the log. 
+  Resolution sensitivity test documented in the vignette.

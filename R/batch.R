@@ -78,6 +78,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 
   res <- tryCatch({
 
+
     img <- jpeg::readJPEG(path)
     b   <- binarize(to_gray(img), method = method, threshold = threshold)
     if (b$status != "ok")
@@ -192,7 +193,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
                               overlay = FALSE, chunk_size = 50L,
-                              J = NULL, cal = NULL, ...) {
+                              J = NULL, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
