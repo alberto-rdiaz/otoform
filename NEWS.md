@@ -1,4 +1,4 @@
-# otoform (development version)
+# otoform 0.1.0
 
 # otoform (development version)
 
