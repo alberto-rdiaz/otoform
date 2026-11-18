@@ -79,6 +79,8 @@ keeping the largest; a quality-control diagnostic.}
 component; see \code{min_area_ratio}.}
 \item{method}{Binarisation method used.}
 \item{k}{Smoothing parameter used.}
+\item{width, height}{Dimensions in pixels of the image. \code{NA} if it
+could not be read.}
 }
 }
 \description{

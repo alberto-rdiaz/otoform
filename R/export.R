@@ -113,6 +113,9 @@ export_signatures <- function(res, file) {
 #' @export
 export_wavelets <- function(dec, dir, prefix = "wavelet") {
   J  <- attr(dec, "J")
+  if (is.null(J))
+    stop("export_wavelets(): 'dec' has no attribute J; use process_contours().",
+         call. = FALSE)
   ok <- ok_only(dec)
   if (length(ok) == 0L) {
     message("export_wavelets(): no successful element; nothing written.")

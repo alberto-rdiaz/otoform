@@ -63,6 +63,8 @@
 #'       component; see \code{min_area_ratio}.}
 #'     \item{method}{Binarisation method used.}
 #'     \item{k}{Smoothing parameter used.}
+#'     \item{width, height}{Dimensions in pixels of the image. \code{NA} if it
+#'     could not be read.}
 #'   }
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{binarize}},
@@ -114,7 +116,9 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          separability = b$separability,
          inverted     = b$inverted,
          n_components = attr(m, "n_components"),
-         area_ratio   = area_ratio)
+         area_ratio   = area_ratio,
+         width        = dim(img)[2L],
+         height       = dim(img)[1L])
 
   }, error = function(e) {
     list(raw          = NULL,
@@ -129,7 +133,9 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
          separability = NA_real_,
          inverted     = NA,
          n_components = NA_integer_,
-         area_ratio   = NA_real_)
+         area_ratio   = NA_real_,
+         width        = if (is.null(img)) NA_integer_ else dim(img)[2L],
+         height       = if (is.null(img)) NA_integer_ else dim(img)[1L])
   })
 
   # Outside the tryCatch: a failure to write the PNG must not turn a correctly
@@ -244,19 +250,21 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
 #' Wavelet-decompose every signature in a collection
 #'
 #' Applies \code{\link{atrous_b3}} to the centroid-distance signature
-#' \code{r} of each element returned by \code{\link{process_directory}} (or
-#' by \code{lapply} over \code{\link{process_image}}). Elements whose
-#' contour stage did not succeed are carried through with their status, so
-#' the output is always parallel to the input. Failures in the decomposition
-#' itself are recorded rather than propagated.
+#' \code{r} of each element returned by \code{\link{process_directory}}.
+#' Elements whose contour stage did not succeed are carried through with
+#' their status, so the output is always parallel to the input. Failures in
+#' the decomposition itself are recorded rather than propagated.
 #'
 #' @param res List returned by \code{\link{process_directory}}: one element
 #'   per image, each carrying \code{file}, \code{r} and \code{status}.
-#' @param J Integer. Number of decomposition levels, passed to
-#'   \code{\link{atrous_b3}}, which validates it against the signature length.
+#' @param J Integer. Number of decomposition levels, the same for the whole
+#'   collection. \code{NULL} (default) applies the half-turn criterion to the
+#'   signature length (\code{\link{max_levels}}); an explicit value is
+#'   validated by \code{\link{atrous_b3}}.
 #'
 #' @return A list with one element per input element, named by \code{file}
-#'   and carrying attribute \code{J}. Each element is a list with:
+#'   and carrying attribute \code{J} (the integer actually used). Each element
+#'   is a list with:
 #'   \describe{
 #'     \item{file}{Image file name.}
 #'     \item{c}{Approximations \code{c[[1]]} (the signature itself) to
@@ -268,13 +276,23 @@ process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
 #'     \item{msg}{Error message; \code{NA} otherwise.}
 #'   }
 #'
-#' @seealso \code{\link{process_directory}}, \code{\link{atrous_b3}}
+#' @seealso \code{\link{process_directory}}, \code{\link{atrous_b3}},
+#'   \code{\link{max_levels}}
 #' @export
 process_contours <- function(res, J = NULL) {
 
   if (!is.list(res) || length(res) == 0L)
     stop("process_contours(): 'res' must be a non-empty list, as returned ",
          "by process_directory().", call. = FALSE)
+
+  ok <- Filter(function(z) identical(z$status, "ok") && !is.null(z$r), res)
+  if (is.null(J)) {
+    if (length(ok) == 0L)
+      stop("process_contours(): no successful element; cannot infer J.",
+           call. = FALSE)
+    J <- max_levels(length(ok[[1L]]$r))     # half-turn criterion, once for all
+  }
+  J <- as.integer(J)
 
   out <- vector("list", length(res))
   names(out) <- vapply(res, function(z) as.character(z$file), character(1L))

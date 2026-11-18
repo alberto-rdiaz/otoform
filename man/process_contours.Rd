@@ -10,12 +10,15 @@ process_contours(res, J = NULL)
 \item{res}{List returned by \code{\link{process_directory}}: one element
 per image, each carrying \code{file}, \code{r} and \code{status}.}
 
-\item{J}{Integer. Number of decomposition levels, passed to
-\code{\link{atrous_b3}}, which validates it against the signature length.}
+\item{J}{Integer. Number of decomposition levels, the same for the whole
+collection. \code{NULL} (default) applies the half-turn criterion to the
+signature length (\code{\link{max_levels}}); an explicit value is
+validated by \code{\link{atrous_b3}}.}
 }
 \value{
 A list with one element per input element, named by \code{file}
-and carrying attribute \code{J}. Each element is a list with:
+and carrying attribute \code{J} (the integer actually used). Each element
+is a list with:
 \describe{
 \item{file}{Image file name.}
 \item{c}{Approximations \code{c[[1]]} (the signature itself) to
@@ -29,12 +32,12 @@ from the contour stage.}
 }
 \description{
 Applies \code{\link{atrous_b3}} to the centroid-distance signature
-\code{r} of each element returned by \code{\link{process_directory}} (or
-by \code{lapply} over \code{\link{process_image}}). Elements whose
-contour stage did not succeed are carried through with their status, so
-the output is always parallel to the input. Failures in the decomposition
-itself are recorded rather than propagated.
+\code{r} of each element returned by \code{\link{process_directory}}.
+Elements whose contour stage did not succeed are carried through with
+their status, so the output is always parallel to the input. Failures in
+the decomposition itself are recorded rather than propagated.
 }
 \seealso{
-\code{\link{process_directory}}, \code{\link{atrous_b3}}
+\code{\link{process_directory}}, \code{\link{atrous_b3}},
+\code{\link{max_levels}}
 }
