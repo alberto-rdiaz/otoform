@@ -10,6 +10,7 @@ process_directory(
   overlay = FALSE,
   chunk_size = 50L,
   J = NULL,
+  cal = NULL,
   ...
 )
 }
@@ -27,9 +28,11 @@ progress reported after each block.}
 
 \item{J}{Integer. Number of wavelet levels, passed to
 \code{\link{process_contours}}. \code{NULL} (default) applies the
-half-turn criterion, \code{\link{max_levels}}.
-@param cal Pixels per millimetre for the whole folder, or NULL for pixel
-units; see export_measurements.}
+half-turn criterion, \code{\link{max_levels}}.}
+
+\item{cal}{Pixels per millimetre for the whole folder
+(one calibration per photographic session), or \code{NULL} for pixel units;
+see \code{\link{export_measurements}}}
 
 \item{...}{
   Arguments passed on to \code{\link[=process_image]{process_image}}

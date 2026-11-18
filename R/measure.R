@@ -34,7 +34,8 @@ measure_contour <- function(xy, cal = NULL) {
          "(pixels per mm).", call. = FALSE)
 
   A  <- polygon_moments(xy)$area
-  xn <- c(xy[-1L, 1L], xy[1L, 1L]); yn <- c(xy[-1L, 2L], xy[1L, 2L])
+  xn <- c(xy[-1L, 1L], xy[1L, 1L])
+  yn <- c(xy[-1L, 2L], xy[1L, 2L])
   P  <- sum(sqrt((xn - xy[, 1L])^2 + (yn - xy[, 2L])^2))
   L  <- diff(range(xy[, 1L]))
   W  <- diff(range(xy[, 2L]))

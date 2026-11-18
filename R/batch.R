@@ -184,8 +184,9 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #' @param J Integer. Number of wavelet levels, passed to
 #'   \code{\link{process_contours}}. \code{NULL} (default) applies the
 #'   half-turn criterion, \code{\link{max_levels}}.
-#'   @param cal Pixels per millimetre for the whole folder, or NULL for pixel
-#'   units; see export_measurements.
+#' @param cal Pixels per millimetre for the whole folder
+#'   (one calibration per photographic session), or \code{NULL} for pixel units;
+#'   see \code{\link{export_measurements}}
 #' @inheritDotParams process_image -path -overlay_file
 #'
 #' @return The list of results, one per image, named by file, invisibly
@@ -193,7 +194,7 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
 #' @export
 process_directory <- function(dir, out_dir = file.path(dir, "otoform"),
                               overlay = FALSE, chunk_size = 50L,
-                              J = NULL, ...) {
+                              J = NULL, cal = NULL, ...) {
 
   if (!dir.exists(dir))
     stop("process_directory(): directory not found: ", dir, call. = FALSE)
