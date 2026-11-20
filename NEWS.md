@@ -1,12 +1,35 @@
-# otoform 0.1.3
+# otoform 0.2.0
+
+* `log.csv` reduced to ten columns: `inverted`, `area`, `width` and `height`
+  removed; `separability`, `area_ratio` and `theta_rad` (radians) rounded to
+  4 decimals.
+* `binarize()` no longer checks or flips polarity: by protocol, images have a
+  black background and a bright otolith.
+* `process_image()` output no longer includes `inverted`, `area`, `width` and
+  `height` (area is reported in `measurements.csv`).
+* `measurements.csv` now reports the six shape indices of Tuset et al. (2003):
+  `form_factor` (4πA/P², previously misnamed `roundness`), `roundness`
+  (4A/(πL²)), `circularity`, `rectangularity`, `ellipticity` and
+  `aspect_ratio` (previously `aspect`).
+* `export_measurements()` gains `digits` (default 4), as in `export_contours()`.
+* Vignette: photography protocol documented (black background, left otoliths,
+  same face, rostrum to the right); outputs and decisions updated.
 
 # otoform 0.1.2
 
+* `process_image()` returns `width` and `height`, which `log_row()` expected.
+* `process_contours()` stores `J` as an attribute of its result, so
+  `export_wavelets()` no longer fails. First version in which
+  `process_directory()` runs end to end on the reference images.
+
 # otoform 0.1.1
+
+* `process_directory()` declares the `cal` argument it passes on to
+  `export_measurements()`.
 
 # otoform 0.1.0
 
-# otoform (development version)
+First tagged version.
 
 * `toBW()` removed. `binarize(method = "fixed", threshold = 127L)` produces a
   pixel-identical mask on the 10 reference images (0 differing pixels).
@@ -48,15 +71,12 @@
   `J = NULL` to use it, and explicit values above the full-contour bound are
   rejected. `atrous_b3()` now rejects coordinate matrices and is vectorised:
   identical output, about 8x faster.
-  * New `measure_contour()` and `export_measurements()`: area, perimeter,
+* New `measure_contour()` and `export_measurements()`: area, perimeter,
   length and width along the principal axes, roundness, aspect and
   rectangularity from the aligned contour, in pixels or, with `cal` (px/mm),
   in millimetres. `process_directory()` writes `measurements.csv`.
 * Sampling decisions fixed and documented: `n_points = 512` (set by the
   lowest-resolution images; finer levels are below the pixel-noise floor),
   `k = 32` (anti-aliasing at half a sampling step), `J = max_levels(N)`.
-* process_image() records width and height of the processed image in the log. 
-  Resolution sensitivity test documented in the vignette.
-* `measurements.csv` now reports the six shape indices of Tuset et al. (2003):
-  `form_factor` (4πA/P², previously misnamed `roundness`), `roundness` (4A/(πL²)),
-  `circularity`, `rectangularity`, `ellipticity` and `aspect_ratio` (previously `aspect`).
+* `process_image()` records width and height of the processed image in the
+  log. Resolution sensitivity test documented in the vignette.
