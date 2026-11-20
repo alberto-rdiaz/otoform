@@ -1,3 +1,5 @@
+# otoform 0.1.3
+
 # otoform 0.1.2
 
 # otoform 0.1.1
@@ -55,3 +57,6 @@
   `k = 32` (anti-aliasing at half a sampling step), `J = max_levels(N)`.
 * process_image() records width and height of the processed image in the log. 
   Resolution sensitivity test documented in the vignette.
+* `measurements.csv` now reports the six shape indices of Tuset et al. (2003):
+  `form_factor` (4πA/P², previously misnamed `roundness`), `roundness` (4A/(πL²)),
+  `circularity`, `rectangularity`, `ellipticity` and `aspect_ratio` (previously `aspect`).

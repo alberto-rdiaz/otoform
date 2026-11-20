@@ -60,8 +60,6 @@ normalisation to unit area: distance from the area centroid to each
 of the \code{n_points} vertices, dimensionless. Carries the attribute
 \code{centroid}. This is the input of \code{\link{atrous_b3}}.
 \code{NULL} on error.}
-\item{area}{Area enclosed by \code{points}, in squared pixels, before
-normalisation. \code{NA} on error.}
 \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
 \item{center}{Area centroid of the smoothed contour, in image pixel
 coordinates: the point subtracted by \code{rotation()} and needed to
@@ -79,8 +77,6 @@ keeping the largest; a quality-control diagnostic.}
 component; see \code{min_area_ratio}.}
 \item{method}{Binarisation method used.}
 \item{k}{Smoothing parameter used.}
-\item{width, height}{Dimensions in pixels of the image. \code{NA} if it
-could not be read.}
 }
 }
 \description{

@@ -20,12 +20,17 @@ wide_table <- function(ok, get, prefix) {
 #' @return A one-row data frame with the scalar fields.
 #' @keywords internal
 log_row <- function(res) {
-  data.frame(file = res$file, status = res$status, msg = res$msg,
-             method = res$method, threshold = res$threshold,
-             separability = res$separability, inverted = res$inverted,
-             n_components = res$n_components, area_ratio = res$area_ratio,
-             area = res$area, theta = res$theta, k = res$k, width = res$width,
-             height = res$height, stringsAsFactors = FALSE)
+  data.frame(file         = res$file,
+             status       = res$status,
+             msg          = res$msg,
+             method       = res$method,
+             threshold    = res$threshold,
+             separability = round(res$separability, 4),
+             n_components = res$n_components,
+             area_ratio   = round(res$area_ratio, 4),
+             theta_rad    = round(res$theta, 4),
+             k            = res$k,
+             stringsAsFactors = FALSE)
 }
 
 # ---- export_* ---------------------------------------------------------------
@@ -178,15 +183,26 @@ export_overlay <- function(img, res, file, width = 1600L) {
 #' @inheritParams export_contours
 #' @param cal Pixels per millimetre for the whole folder (one calibration per
 #'   photographic session), or \code{NULL} for pixel units.
-#' @return The table, invisibly; \code{NULL} if no image succeeded.
+#'  @param digits Integer. Number of decimal places kept in the file (default 4)
+#' @return Named numeric vector with attribute \code{unit} ("px" or "mm"):
+#'   \code{area}, \code{perimeter}, \code{length} (extent along the first
+#'   principal axis of the area), \code{width} (extent along the second), and
+#'   the six dimensionless shape indices of Tuset et al. (2003):
+#'   \code{form_factor} = 4*pi*A/P^2, \code{roundness} = 4*A/(pi*L^2),
+#'   \code{circularity} = P^2/A, \code{rectangularity} = A/(L*W),
+#'   \code{ellipticity} = (L - W)/(L + W), \code{aspect_ratio} = L/W.
+#' @references Tuset, V.M., Lozano, I.J., González, J.A., Pertusa, J.F. &
+#'   García-Díaz, M.M. (2003). Shape indices to identify regional differences
+#'   in otolith morphology of comber, Serranus cabrilla (L., 1758).
+#'   Journal of Applied Ichthyology, 19, 88–93.
 #' @export
-export_measurements <- function(res, file, cal = NULL) {
+export_measurements <- function(res, file, cal = NULL, digits = 4L) {
   ok <- ok_only(res)
   if (length(ok) == 0L) {
     message("export_measurements(): no successful image; nothing written.")
     return(invisible(NULL))
   }
-  m   <- t(vapply(ok, function(z) measure_contour(z$points, cal), numeric(7L)))
+  m <- round(do.call(rbind, lapply(ok, function(z) measure_contour(z$points, cal))),digits)
   tab <- data.frame(file = vapply(ok, `[[`, character(1L), "file"),
                     unit = if (is.null(cal)) "px" else "mm",
                     m, stringsAsFactors = FALSE)

@@ -44,8 +44,6 @@
 #'       of the \code{n_points} vertices, dimensionless. Carries the attribute
 #'       \code{centroid}. This is the input of \code{\link{atrous_b3}}.
 #'       \code{NULL} on error.}
-#'     \item{area}{Area enclosed by \code{points}, in squared pixels, before
-#'       normalisation. \code{NA} on error.}
 #'     \item{theta}{Rotation angle applied, in radians. \code{NA} on error.}
 #'     \item{center}{Area centroid of the smoothed contour, in image pixel
 #'       coordinates: the point subtracted by \code{rotation()} and needed to
@@ -63,8 +61,6 @@
 #'       component; see \code{min_area_ratio}.}
 #'     \item{method}{Binarisation method used.}
 #'     \item{k}{Smoothing parameter used.}
-#'     \item{width, height}{Dimensions in pixels of the image. \code{NA} if it
-#'     could not be read.}
 #'   }
 #'
 #' @seealso \code{\link{process_directory}}, \code{\link{binarize}},
@@ -107,35 +103,27 @@ process_image <- function(path, method = c("otsu", "fixed"), threshold = NULL,
     list(raw          = raw,
          points       = points,
          r            = r,
-         area         = attr(norm, "area"),
          theta        = attr(rotated, "theta"),
          center       = attr(rotated, "center"),
          status       = attr(points, "status"),
          msg          = NA_character_,
          threshold    = b$threshold,
          separability = b$separability,
-         inverted     = b$inverted,
          n_components = attr(m, "n_components"),
-         area_ratio   = area_ratio,
-         width        = dim(img)[2L],
-         height       = dim(img)[1L])
+         area_ratio   = area_ratio)
 
   }, error = function(e) {
     list(raw          = NULL,
          points       = NULL,
          r            = NULL,
-         area         = NA_real_,
          theta        = NA_real_,
          center       = c(NA_real_, NA_real_),
          status       = "error",
          msg          = conditionMessage(e),
          threshold    = NA_integer_,
          separability = NA_real_,
-         inverted     = NA,
          n_components = NA_integer_,
-         area_ratio   = NA_real_,
-         width        = if (is.null(img)) NA_integer_ else dim(img)[2L],
-         height       = if (is.null(img)) NA_integer_ else dim(img)[1L])
+         area_ratio   = NA_real_)
   })
 
   # Outside the tryCatch: a failure to write the PNG must not turn a correctly

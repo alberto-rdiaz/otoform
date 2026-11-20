@@ -15,15 +15,23 @@ a single positive number converts lengths (/ cal) and areas (/ cal^2)
 to millimetres. Dimensionless descriptors do not change.}
 }
 \value{
-A named numeric vector: \code{area}, \code{perimeter},
-\code{length}, \code{width}, \code{roundness} (\eqn{4 \pi A / P^2}, 1 for
-a circle), \code{aspect} (\code{length / width}) and
-\code{rectangularity} (\code{area / (length * width)}), with attribute
-\code{unit} (\code{"px"} or \code{"mm"}).
+Named numeric vector with attribute \code{unit} ("px" or "mm"):
+\code{area}, \code{perimeter}, \code{length} (extent along the first
+principal axis of the area), \code{width} (extent along the second), and
+the six dimensionless shape indices of Tuset et al. (2003):
+\code{form_factor} = 4\emph{pi}A/P^2, \code{roundness} = 4\emph{A/(pi}L^2),
+\code{circularity} = P^2/A, \code{rectangularity} = A/(L*W),
+\code{ellipticity} = (L - W)/(L + W), \code{aspect_ratio} = L/W.
 }
 \description{
 Classical size and shape descriptors of a closed contour, computed from
 the coordinates (never from attributes). On the output of
 \code{\link{anchor_rostrum}} the major axis lies on x, so \code{length}
 and \code{width} are the extents along the principal axes.
+}
+\references{
+Tuset, V.M., Lozano, I.J., González, J.A., Pertusa, J.F. &
+García-Díaz, M.M. (2003). Shape indices to identify regional differences
+in otolith morphology of comber, Serranus cabrilla (L., 1758).
+Journal of Applied Ichthyology, 19, 88–93.
 }

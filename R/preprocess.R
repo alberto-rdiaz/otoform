@@ -72,7 +72,6 @@ to_gray <- function(img) {
 #'     \item{separability}{Otsu's \code{eta*} evaluated at the applied
 #'       threshold. Defined for both methods, which allows the loss incurred
 #'       by a fixed threshold to be quantified against the optimum.}
-#'     \item{inverted}{Logical. \code{TRUE} if the mask had to be flipped.}
 #'     \item{method}{The method used.}
 #'     \item{L}{Number of levels used.}
 #'     \item{status}{\code{"ok"} or \code{"degenerate"}.}
@@ -89,12 +88,11 @@ to_gray <- function(img) {
 #' \strong{Comparison.} The test is \code{>} and not \code{>=}, because the
 #' threshold is the last level of the low class.
 #'
-#' \strong{Polarity.} Otsu separates low from high levels but cannot know
-#' which group is the object. Polarity is normalised using an invariant of the
-#' photographic setup: the background touches the image border, a centred
-#' otolith does not. If most of the frame comes out \code{TRUE} the mask is
-#' flipped and \code{inverted} records it. A sudden rise in the proportion of
-#' inverted frames means something changed in the setup.
+#' \strong{Polarity.} By protocol, images are taken on a black background, so
+#' the high class is the object and \code{TRUE} marks it. No polarity check
+#' is made. A bright background is not detected here: it makes
+#' \code{\link{keep_largest}} fail, because the largest component then touches
+#' the image border.
 #'
 #' @seealso \code{\link{to_gray}}, \code{\link{otsu}}
 #'
@@ -162,22 +160,20 @@ binarize <- function(g, method = c("otsu", "fixed"), threshold = NULL,
   }
 
   if (sts == "degenerate")
-    return(list(bw = NULL, threshold = NA_integer_, separability = NA_real_,
-                inverted = NA, method = method, L = L,
-                status = "degenerate"))
+    return(list(bw           = NULL,
+                threshold    = NA_integer_,
+                separability = NA_real_,
+                method       = method, L = L,
+                status       = "degenerate"))
 
   bw <- g_q > thr
 
   # Corners are counted twice; irrelevant for a mean over thousands of border
   # pixels.
-  brd      <- c(bw[1L, ], bw[nrow(bw), ], bw[, 1L], bw[, ncol(bw)])
-  inverted <- mean(brd) > 0.5
-  if (inverted) bw <- !bw
 
   list(bw           = bw,
        threshold    = thr,
        separability = sep,
-       inverted     = inverted,
        method       = method,
        L            = L,
        status       = "ok")

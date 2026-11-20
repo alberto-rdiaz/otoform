@@ -30,7 +30,6 @@ scale. \code{NA_integer_} for degenerate images.}
 \item{separability}{Otsu's \code{eta*} evaluated at the applied
 threshold. Defined for both methods, which allows the loss incurred
 by a fixed threshold to be quantified against the optimum.}
-\item{inverted}{Logical. \code{TRUE} if the mask had to be flipped.}
 \item{method}{The method used.}
 \item{L}{Number of levels used.}
 \item{status}{\code{"ok"} or \code{"degenerate"}.}
@@ -52,12 +51,11 @@ pixels along the otolith edge, precisely where \code{Conte} traces.
 \strong{Comparison.} The test is \code{>} and not \code{>=}, because the
 threshold is the last level of the low class.
 
-\strong{Polarity.} Otsu separates low from high levels but cannot know
-which group is the object. Polarity is normalised using an invariant of the
-photographic setup: the background touches the image border, a centred
-otolith does not. If most of the frame comes out \code{TRUE} the mask is
-flipped and \code{inverted} records it. A sudden rise in the proportion of
-inverted frames means something changed in the setup.
+\strong{Polarity.} By protocol, images are taken on a black background, so
+the high class is the object and \code{TRUE} marks it. No polarity check
+is made. A bright background is not detected here: it makes
+\code{\link{keep_largest}} fail, because the largest component then touches
+the image border.
 }
 \seealso{
 \code{\link{to_gray}}, \code{\link{otsu}}

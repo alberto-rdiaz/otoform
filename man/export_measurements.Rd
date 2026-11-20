@@ -4,7 +4,7 @@
 \alias{export_measurements}
 \title{Export the shape measurements of a collection}
 \usage{
-export_measurements(res, file, cal = NULL)
+export_measurements(res, file, cal = NULL, digits = 4L)
 }
 \arguments{
 \item{res}{List returned by \code{\link{process_directory}}.}
@@ -12,12 +12,28 @@ export_measurements(res, file, cal = NULL)
 \item{file}{Path of the CSV to write.}
 
 \item{cal}{Pixels per millimetre for the whole folder (one calibration per
-photographic session), or \code{NULL} for pixel units.}
+photographic session), or \code{NULL} for pixel units.
+@param digits Integer. Number of decimal places kept in the file (default 4)}
+
+\item{digits}{Decimal places kept; sub-pixel anchoring is good to about
+0.01 px, so 4 is already more than the data carry.}
 }
 \value{
-The table, invisibly; \code{NULL} if no image succeeded.
+Named numeric vector with attribute \code{unit} ("px" or "mm"):
+\code{area}, \code{perimeter}, \code{length} (extent along the first
+principal axis of the area), \code{width} (extent along the second), and
+the six dimensionless shape indices of Tuset et al. (2003):
+\code{form_factor} = 4\emph{pi}A/P^2, \code{roundness} = 4\emph{A/(pi}L^2),
+\code{circularity} = P^2/A, \code{rectangularity} = A/(L*W),
+\code{ellipticity} = (L - W)/(L + W), \code{aspect_ratio} = L/W.
 }
 \description{
 One row per otolith with \code{status == "ok"}: \code{file}, \code{unit}
 and the descriptors of \code{\link{measure_contour}}.
+}
+\references{
+Tuset, V.M., Lozano, I.J., González, J.A., Pertusa, J.F. &
+García-Díaz, M.M. (2003). Shape indices to identify regional differences
+in otolith morphology of comber, Serranus cabrilla (L., 1758).
+Journal of Applied Ichthyology, 19, 88–93.
 }

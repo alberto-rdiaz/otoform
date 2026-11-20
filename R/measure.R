@@ -13,11 +13,17 @@
 #'   a single positive number converts lengths (/ cal) and areas (/ cal^2)
 #'   to millimetres. Dimensionless descriptors do not change.
 #'
-#' @return A named numeric vector: \code{area}, \code{perimeter},
-#'   \code{length}, \code{width}, \code{roundness} (\eqn{4 \pi A / P^2}, 1 for
-#'   a circle), \code{aspect} (\code{length / width}) and
-#'   \code{rectangularity} (\code{area / (length * width)}), with attribute
-#'   \code{unit} (\code{"px"} or \code{"mm"}).
+#' @return Named numeric vector with attribute \code{unit} ("px" or "mm"):
+#'   \code{area}, \code{perimeter}, \code{length} (extent along the first
+#'   principal axis of the area), \code{width} (extent along the second), and
+#'   the six dimensionless shape indices of Tuset et al. (2003):
+#'   \code{form_factor} = 4*pi*A/P^2, \code{roundness} = 4*A/(pi*L^2),
+#'   \code{circularity} = P^2/A, \code{rectangularity} = A/(L*W),
+#'   \code{ellipticity} = (L - W)/(L + W), \code{aspect_ratio} = L/W.
+#' @references Tuset, V.M., Lozano, I.J., González, J.A., Pertusa, J.F. &
+#'   García-Díaz, M.M. (2003). Shape indices to identify regional differences
+#'   in otolith morphology of comber, Serranus cabrilla (L., 1758).
+#'   Journal of Applied Ichthyology, 19, 88–93.
 #' @export
 measure_contour <- function(xy, cal = NULL) {
 
@@ -45,9 +51,12 @@ measure_contour <- function(xy, cal = NULL) {
            perimeter      = P / s,
            length         = L / s,
            width          = W / s,
-           roundness      = 4 * pi * A / P^2,
-           aspect         = L / W,
-           rectangularity = A / (L * W))
+           form_factor    = 4 * pi * A / P^2,
+           roundness      = 4 * A / (pi * L^2),
+           circularity    = P^2 / A,
+           rectangularity = A / (L * W),
+           ellipticity    = (L - W) / (L + W),
+           aspect_ratio   = L / W)
   attr(out, "unit") <- if (is.null(cal)) "px" else "mm"
   out
 }

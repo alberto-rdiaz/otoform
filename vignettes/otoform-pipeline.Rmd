@@ -42,7 +42,7 @@ Batch: `process_directory(dir, ...)`.
 | 10 | `centroid_distance(norm)` | `norm` | `r`, length 512, dimensionless | `centroid` |
 
 `process_image()` returns: `file`, `raw`, `points`, `theta`, `status`, `msg`,
-`threshold`, `separability`, `inverted`, `r`, `area`, `method`, `k`. The error
+`threshold`, `separability`, `r`, `area`, `method`, `k`. The error
 branch returns the same names with `NULL`/`NA`.
 
 `points` (pixels) is the archival contour: it is what gets exported and
